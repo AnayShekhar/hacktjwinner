@@ -1,0 +1,200 @@
+@tasks.md
+🌿 What the App Does
+Fern AI is an AI-powered mobile app that audits hospital bills for fraud and overcharges. The user photographs or uploads a hospital bill. The system extracts every CPT code and line-item price, validates them against CMS data, flags incorrect or fraudulent charges, calculates total savings, and generates a formal dispute letter.
+User Flow:
+
+ User opens app → taps Scan Bill (camera) or Upload PDF
+ Image or PDF is sent to FastAPI backend as base64
+ Four AI agents run in sequence: Parser → CPT Validator → Price Auditor → Letter Gen
+ Results screen shows flagged line items (green = ok, red = flagged) + total savings
+ Letter screen lets user copy or share the dispute letter
+
+
+✅ Core Functionalities
+📥 Bill Ingestion
+
+ Camera capture using expo-camera — sends image as base64 to backend
+ PDF upload using expo-document-picker — sends PDF as base64 to backend
+ Gallery upload fallback using expo-image-picker
+ Loading state during upload with progress indicator
+
+🤖 Parser Agent (agents/parser.py)
+
+ Accept base64 image or PDF from FastAPI endpoint
+ Call Gemini Vision (gemini-2.0-flash) with structured extraction prompt
+ Return BillJSON with all line items, CPT codes, and prices extracted
+ Handle multi-page PDFs and low-quality photos gracefully
+
+🔍 CPT Validator Agent (agents/validator.py)
+
+ Load CMS CPT code database into ChromaDB via rag/ingest.py
+ For each line item, run RAG query to verify CPT code exists and matches description
+ Set flagged: true and populate flag_reason if code is invalid or mismatched
+ Return updated BillJSON
+
+💰 Price Auditor Agent (agents/price_auditor.py)
+
+ Compare each line item's billed_price against CMS/Medicare fee schedule
+ Flag items where billed price exceeds CMS rate by >20%
+ Calculate savings per line item and total_recoverable for the full bill
+ Run Isolation Forest (ml/anomaly.py) to catch statistically unusual charge patterns
+ Return updated BillJSON
+
+📝 Letter Generation Agent (agents/letter_gen.py)
+
+ Accept final BillJSON with all flags set as input
+ Prompt Gemini to write a formal, professional dispute letter
+ Letter must include: patient info, provider, date of service, itemized disputed charges, CMS rates cited, and a clear demand
+ Return letter as plain text string
+
+🗃️ RAG System (rag/)
+
+ ingest.py — parse cpt_codes.csv and chargemaster files → embed with all-MiniLM-L6-v2 → store in ChromaDB
+ retriever.py — semantic search interface used by validator and price auditor agents
+ ChromaDB persisted locally during hackathon
+
+🌐 API Endpoints (backend/main.py)
+
+ POST /analyze — accepts { image_base64, file_type }, runs full agent pipeline, returns BillJSON + letter
+ GET /health — simple health check
+ CORS configured for Expo dev client
+ ngrok tunnel setup documented in README
+
+
+🎨 UI/UX Structure
+Design language: dark green (#1a3a2a) primary, lime accent (#a8e063), white cards. One job per screen.
+🧭 Bottom Navigation
+
+ Add bottom tab navigation with 3 pages: Home, History, and Profile
+
+🏠 Home Screen (HomeScreen.jsx)
+
+ App logo + tagline: "Fight Back Against Overcharges"
+ Large Scan Bill button (camera icon) — primary CTA, lime green fill
+ Upload PDF button — secondary CTA, outlined style
+ Brief 3-step explainer below buttons (Scan → Audit → Dispute)
+
+📊 Analysis Screen (AnalysisScreen.jsx)
+
+ Top section:
+
+ Animated agent pipeline status (Parser → Validator → Price Auditor → Letter Gen)
+ Each agent shows spinner while running, checkmark when done
+
+
+ Results section:
+
+ List of CodeCard components — one per CPT line item
+ Green card: code valid, price fair
+ Red card: flagged — shows flag_reason and potential savings
+
+
+ Sticky bottom bar showing Total Recoverable: $XXX.XX via SavingsCounter
+ Generate Dispute Letter button appears once all agents complete
+
+📄 Letter Screen (LetterScreen.jsx)
+
+ Full scrollable dispute letter text in a readable card
+ Copy Letter button
+ Share button (native share sheet)
+ Back button returns to Analysis Screen
+
+🧩 Components
+
+ CodeCard.jsx — props: cpt_code, description, billed_price, cms_price, flagged, flag_reason, savings — renders green or red card
+ SavingsCounter.jsx — animated number counter for total recoverable amount in lime-green display text
+
+📐 UX Rules
+
+ One job per screen — no screen does more than one thing
+ Loading states on every async action
+ Error states with friendly messages (e.g. "Couldn't read bill — try a clearer photo")
+ Never show raw JSON to the user
+
+
+🗂️ Folder Structure (Fern AI)
+fern-ai/
+├── backend/
+│   ├── main.py
+│   ├── agents/
+│   │   ├── parser.py
+│   │   ├── validator.py
+│   │   ├── price_auditor.py
+│   │   └── letter_gen.py
+│   ├── rag/
+│   │   ├── ingest.py
+│   │   └── retriever.py
+│   ├── ml/
+│   │   └── anomaly.py
+│   └── parsers/
+│       └── image_parser.py
+├── fern-ai-mobile/
+│   └── src/
+│       ├── screens/
+│       │   ├── HomeScreen.jsx
+│       │   ├── AnalysisScreen.jsx
+│       │   └── LetterScreen.jsx
+│       └── components/
+│           ├── CodeCard.jsx
+│           └── SavingsCounter.jsx
+└── data/
+    ├── cpt_codes.csv
+    └── chargemaster/
+
+📦 Shared BillJSON Contract
+All agents read and write this schema.
+json{
+  "patient": "John Doe",
+  "date_of_service": "2024-01-15",
+  "provider": "General Hospital",
+  "line_items": [
+    {
+      "cpt_code": "99213",
+      "description": "Office visit",
+      "billed_price": 450.00,
+      "flagged": false,
+      "flag_reason": null,
+      "cms_price": 120.00,
+      "savings": 0
+    }
+  ],
+  "total_billed": 450.00,
+  "total_recoverable": 0
+}
+
+⚙️ Dev Setup (Fern AI)
+Mobile
+bashnpx create-expo-app fern-ai-mobile
+cd fern-ai-mobile
+npx expo install expo-camera expo-document-picker expo-image-picker
+npm install nativewind
+Backend
+bashcd backend
+pip install fastapi uvicorn google-generativeai chromadb sentence-transformers scikit-learn pyngrok python-multipart
+uvicorn main:app --reload --port 8000
+ngrok Tunnel
+bashpip install pyngrok
+ngrok http 8000
+# Paste the URL (e.g. https://abc123.ngrok.io) into the mobile app as API_BASE_URL
+Gemini Setup
+pythonimport google.generativeai as genai
+import os
+genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+model = genai.GenerativeModel("gemini-2.0-flash")
+
+📏 Agent Rules
+
+ Mobile always sends images/PDFs as base64 strings to FastAPI
+ All LLM calls use Gemini 2.0 Flash only — no other models
+ Every agent must return structured JSON (BillJSON schema) — no free-form text except letter_gen
+ Screens do one job — no multi-purpose screens
+ Backend runs locally, tunneled via ngrok for hackathon demo
+
+
+🚀 Stretch Goals
+
+ Bill history screen — store past audits locally with AsyncStorage
+ Severity scoring per flag (minor overcharge vs. potential fraud)
+ Export dispute letter as PDF
+ Side-by-side bill image vs. extracted data view
+ Support for EOB (Explanation of Benefits) documents

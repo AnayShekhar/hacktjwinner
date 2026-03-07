@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+python-multipart
+google-generativeai
+chromadb
+sentence-transformers
+scikit-learn
+pyngrok
+
