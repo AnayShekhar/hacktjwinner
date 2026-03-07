@@ -8,12 +8,16 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import * as FileSystem from 'expo-file-system';
+// Use the legacy filesystem API so readAsStringAsync works on SDK 54
+import * as FileSystem from 'expo-file-system/legacy';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
 const GREEN = '#1a3a2a';
 const LIME = '#a8e063';
-const API_BASE_URL = 'http://10.0.2.2:8000';
+// On a real device (Expo Go), use your computer's LAN IP, e.g. http://192.168.1.5:8000
+const API_BASE_URL =
+  (typeof process !== 'undefined' && process.env?.EXPO_PUBLIC_API_BASE_URL) ||
+  'http://10.0.2.2:8000';
 
 type AgentStatus = {
   name: string;
@@ -65,8 +69,9 @@ export default function AnalysisScreen() {
         setLoading(true);
         setError(null);
 
+        // Legacy API: read file contents as base64 so we can send to the backend
         const base64 = await FileSystem.readAsStringAsync(uri, {
-          encoding: FileSystem.EncodingType.Base64,
+          encoding: 'base64',
         });
 
         const response = await fetch(`${API_BASE_URL}/analyze`, {
