@@ -1,8 +1,6 @@
-#!/Users/ishaan/hacktjwinner-1/fernai/.venv/bin/python3.12
-# -*- coding: utf-8 -*-
-import re
+#!/Users/ishaan/hacktjwinner-1/fernai/.venv/bin/python3
 import sys
-from transformers.cli.transformers import main
+from transformers.commands.transformers_cli import main
 if __name__ == '__main__':
-    sys.argv[0] = re.sub(r'(-script\.pyw|\.exe)?$', '', sys.argv[0])
+    sys.argv[0] = sys.argv[0].removesuffix('.exe')
     sys.exit(main())

@@ -19,6 +19,7 @@ import importlib.metadata
 import operator
 import re
 import sys
+from typing import Optional
 
 from packaging import version
 
@@ -45,7 +46,7 @@ def _compare_versions(op, got_ver, want_ver, requirement, pkg, hint):
         )
 
 
-def require_version(requirement: str, hint: str | None = None) -> None:
+def require_version(requirement: str, hint: Optional[str] = None) -> None:
     """
     Perform a runtime check of the dependency versions, using the exact same syntax used by pip.
 

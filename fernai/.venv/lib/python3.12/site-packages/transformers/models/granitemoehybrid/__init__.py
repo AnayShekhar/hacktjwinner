@@ -1,3 +1,4 @@
+# coding=utf-8
 # Copyright 2025 IBM and the HuggingFace Inc. team. All rights reserved.
 #
 #

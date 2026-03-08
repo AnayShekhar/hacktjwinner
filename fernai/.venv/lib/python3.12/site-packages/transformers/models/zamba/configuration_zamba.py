@@ -1,3 +1,4 @@
+# coding=utf-8
 # Copyright 2024 Zyphra Technologies and the HuggingFace Inc. team. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,14 +16,14 @@
 
 import math
 
-from ...configuration_utils import PreTrainedConfig
+from ...configuration_utils import PretrainedConfig
 from ...utils import logging
 
 
 logger = logging.get_logger(__name__)
 
 
-class ZambaConfig(PreTrainedConfig):
+class ZambaConfig(PretrainedConfig):
     r"""
     This is the configuration class to store the configuration of a [`ZambaModel`]. It is used to instantiate a
     Zamba model according to the specified arguments, defining the model architecture. Instantiating a configuration
@@ -30,8 +31,8 @@ class ZambaConfig(PreTrainedConfig):
 
     [Zyphra/Zamba-7B-v1](https://huggingface.co/Zyphra/Zamba-7B-v1)
 
-    Configuration objects inherit from [`PreTrainedConfig`] and can be used to control the model outputs. Read the
-    documentation from [`PreTrainedConfig`] for more information.
+    Configuration objects inherit from [`PretrainedConfig`] and can be used to control the model outputs. Read the
+    documentation from [`PretrainedConfig`] for more information.
 
 
     Args:
@@ -206,11 +207,13 @@ class ZambaConfig(PreTrainedConfig):
             "`intermediate_size` should be divisible by `n_mamba_heads`."
         )
 
-        self.tie_word_embeddings = tie_word_embeddings
-        self.pad_token_id = pad_token_id
-        self.bos_token_id = bos_token_id
-        self.eos_token_id = eos_token_id
-        super().__init__(**kwargs)
+        super().__init__(
+            pad_token_id=pad_token_id,
+            bos_token_id=bos_token_id,
+            eos_token_id=eos_token_id,
+            tie_word_embeddings=tie_word_embeddings,
+            **kwargs,
+        )
 
     def _layers_block_type(self, num_hidden_layers, attn_layer_period, attn_layer_offset):
         layers = [

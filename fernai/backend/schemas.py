@@ -8,6 +8,12 @@ from pydantic import BaseModel, Field, model_validator
 MAX_IMAGE_SIZE_BYTES = 15 * 1024 * 1024  # 15 MB
 
 
+class AdditionalPage(BaseModel):
+    """One additional page (image or PDF) for multi-page bill."""
+    base64: str
+    file_type: Literal["image", "pdf"]
+
+
 class LineItem(BaseModel):
     cpt_code: str = Field(..., description="CPT or billing code for this line item")
     description: str
@@ -16,6 +22,7 @@ class LineItem(BaseModel):
     flag_reason: Optional[str] = None
     cms_price: Optional[float] = None
     savings: float = 0.0
+    service_date: Optional[str] = None  # YYYY-MM-DD for temporal checks
 
 
 class BillJSON(BaseModel):
@@ -25,6 +32,8 @@ class BillJSON(BaseModel):
     line_items: List[LineItem]
     total_billed: float
     total_recoverable: float = 0.0
+    discharge_date: Optional[str] = None  # for temporal fraud check
+    diagnosis_codes: Optional[List[str]] = None  # ICD-10 for coherence check
 
 
 class AnalyzeRequest(BaseModel):
@@ -35,6 +44,14 @@ class AnalyzeRequest(BaseModel):
     file_type: Literal["image", "pdf"] = Field(
         ...,
         description="Either 'image' or 'pdf' to indicate the uploaded file type.",
+    )
+    additional_images_base64: Optional[List[str]] = Field(
+        default=None,
+        description="Optional list of base64-encoded images (additional pages). Deprecated: prefer additional_pages.",
+    )
+    additional_pages: Optional[List[AdditionalPage]] = Field(
+        default=None,
+        description="Optional list of additional pages (image or PDF) for the same bill.",
     )
 
     @model_validator(mode="after")
@@ -63,6 +80,16 @@ class AgentRunStatus(BaseModel):
 
 class AnalyzeResponse(BaseModel):
     bill: BillJSON
-    letter: str
+    letter: Optional[str] = None  # Only set when total_recoverable > 0 (dispute letter)
     agents: List[AgentRunStatus]
+    analysis_time_seconds: Optional[float] = None
+    suspicion_score: Optional[int] = None  # 0-100
+    similar_bills_count: Optional[int] = None  # bill similarity search
+    clean_bill_explanation: Optional[str] = None  # when total_recoverable is 0, why we found no issues
+    diagnosis_coherence_message: Optional[str] = None
+    temporal_check_message: Optional[str] = None
+    insight_bill_similarity: Optional[str] = None  # LLM-generated
+    insight_diagnosis_coherence: Optional[str] = None  # LLM-generated
+    insight_suspicion_score: Optional[str] = None  # LLM-generated
+    insight_temporal: Optional[str] = None  # LLM-generated
 

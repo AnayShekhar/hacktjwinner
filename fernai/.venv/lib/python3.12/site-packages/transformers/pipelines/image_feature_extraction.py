@@ -66,8 +66,9 @@ class ImageFeatureExtractionPipeline(Pipeline):
 
     def preprocess(self, image, timeout=None, **image_processor_kwargs) -> dict[str, GenericTensor]:
         image = load_image(image, timeout=timeout)
-        model_inputs = self.image_processor(image, return_tensors="pt", **image_processor_kwargs)
-        model_inputs = model_inputs.to(self.dtype)
+        model_inputs = self.image_processor(image, return_tensors=self.framework, **image_processor_kwargs)
+        if self.framework == "pt":
+            model_inputs = model_inputs.to(self.dtype)
         return model_inputs
 
     def _forward(self, model_inputs):
@@ -89,7 +90,10 @@ class ImageFeatureExtractionPipeline(Pipeline):
 
         if return_tensors:
             return outputs
-        return outputs.tolist()
+        if self.framework == "pt":
+            return outputs.tolist()
+        elif self.framework == "tf":
+            return outputs.numpy().tolist()
 
     def __call__(self, *args: Union[str, "Image.Image", list["Image.Image"], list[str]], **kwargs: Any) -> list[Any]:
         """

@@ -4,6 +4,7 @@
 #             the file from the modular. If any change should be done, please apply the change to the
 #                          modular_llava_next_video.py file directly. One of our CI enforces this.
 #                🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨
+# coding=utf-8
 # Copyright 2024 HuggingFace Inc. team. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,18 +19,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from ...configuration_utils import PreTrainedConfig
+from ...configuration_utils import PretrainedConfig
 from ..auto import CONFIG_MAPPING, AutoConfig
 
 
-class LlavaNextVideoConfig(PreTrainedConfig):
+class LlavaNextVideoConfig(PretrainedConfig):
     r"""
     This is the configuration class to store the configuration of a [`LlavaNextVideoForConditionalGeneration`]. It is used to instantiate an
     Llava-NeXT model according to the specified arguments, defining the model architecture. Instantiating a configuration
     with the defaults will yield a similar configuration to that of the [llava-hf/LLaVA-NeXT-Video-7B-hf](https://huggingface.co/llava-hf/LLaVA-NeXT-Video-7B-hf)
     model.
-    Configuration objects inherit from [`PreTrainedConfig`] and can be used to control the model outputs. Read the
-    documentation from [`PreTrainedConfig`] for more information.
+    Configuration objects inherit from [`PretrainedConfig`] and can be used to control the model outputs. Read the
+    documentation from [`PretrainedConfig`] for more information.
 
     Args:
         vision_config (`Union[AutoConfig, dict]`,  *optional*, defaults to `CLIPVisionConfig`):
@@ -53,6 +54,8 @@ class LlavaNextVideoConfig(PreTrainedConfig):
         image_grid_pinpoints (`List`, *optional*, defaults to `[[336, 672], [672, 336], [672, 672], [1008, 336], [336, 1008]]`):
             A list of possible resolutions to use for processing high resolution images. Each item in the list should be a tuple or list
             of the form `(height, width)`.
+        tie_word_embeddings (`bool`, *optional*, defaults to `False`):
+            Whether the model's input and output word embeddings should be tied.
         video_token_index (`int`, *optional*, defaults to 32000):
             The video token index to encode the image prompt.
         spatial_pool_mode (`str`, *optional*, defaults to `"average"`):
@@ -63,8 +66,6 @@ class LlavaNextVideoConfig(PreTrainedConfig):
             Sequence length of one image embedding.
         video_seq_length (`int`, *optional*, defaults to 288):
             Sequence length of one video embedding.
-        tie_word_embeddings (`bool`, *optional*, defaults to `False`):
-            Whether to tie weight embeddings
 
     Example:
 
@@ -102,12 +103,12 @@ class LlavaNextVideoConfig(PreTrainedConfig):
         vision_feature_select_strategy="default",
         vision_feature_layer=-2,
         image_grid_pinpoints=None,
+        tie_word_embeddings=False,
         video_token_index=32000,
         spatial_pool_mode="average",
         spatial_pool_stride=2,
         image_seq_length=576,
         video_seq_length=288,
-        tie_word_embeddings=False,
         **kwargs,
     ):
         self.video_token_index = video_token_index
@@ -118,7 +119,6 @@ class LlavaNextVideoConfig(PreTrainedConfig):
         self.image_token_index = image_token_index
         self.projector_hidden_act = projector_hidden_act
         self.multimodal_projector_bias = multimodal_projector_bias
-        self.tie_word_embeddings = tie_word_embeddings
 
         if vision_feature_select_strategy not in ["default", "full"]:
             raise ValueError(
@@ -160,13 +160,7 @@ class LlavaNextVideoConfig(PreTrainedConfig):
 
         self.text_config = text_config
 
-        # The default value is `False` but this config is used with many model types
-        # Attr `tie_word_embeddings` was saved in text config for those models, so we
-        # need an ugly workaround and forward-pass the attr from text config
-        if not tie_word_embeddings and self.text_config.tie_word_embeddings:
-            self.tie_word_embeddings = self.text_config.tie_word_embeddings
-
-        super().__init__(**kwargs)
+        super().__init__(tie_word_embeddings=tie_word_embeddings, **kwargs)
 
 
 __all__ = ["LlavaNextVideoConfig"]

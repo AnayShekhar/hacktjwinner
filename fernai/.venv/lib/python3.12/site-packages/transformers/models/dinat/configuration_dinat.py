@@ -1,3 +1,4 @@
+# coding=utf-8
 # Copyright 2022 The HuggingFace Inc. team. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,23 +14,23 @@
 # limitations under the License.
 """Dilated Neighborhood Attention Transformer model configuration"""
 
-from ...backbone_utils import BackboneConfigMixin
-from ...configuration_utils import PreTrainedConfig
+from ...configuration_utils import PretrainedConfig
 from ...utils import logging
+from ...utils.backbone_utils import BackboneConfigMixin, get_aligned_output_features_output_indices
 
 
 logger = logging.get_logger(__name__)
 
 
-class DinatConfig(BackboneConfigMixin, PreTrainedConfig):
+class DinatConfig(BackboneConfigMixin, PretrainedConfig):
     r"""
     This is the configuration class to store the configuration of a [`DinatModel`]. It is used to instantiate a Dinat
     model according to the specified arguments, defining the model architecture. Instantiating a configuration with the
     defaults will yield a similar configuration to that of the Dinat
     [shi-labs/dinat-mini-in1k-224](https://huggingface.co/shi-labs/dinat-mini-in1k-224) architecture.
 
-    Configuration objects inherit from [`PreTrainedConfig`] and can be used to control the model outputs. Read the
-    documentation from [`PreTrainedConfig`] for more information.
+    Configuration objects inherit from [`PretrainedConfig`] and can be used to control the model outputs. Read the
+    documentation from [`PretrainedConfig`] for more information.
 
     Args:
         patch_size (`int`, *optional*, defaults to 4):
@@ -143,7 +144,9 @@ class DinatConfig(BackboneConfigMixin, PreTrainedConfig):
         self.hidden_size = int(embed_dim * 2 ** (len(depths) - 1))
         self.layer_scale_init_value = layer_scale_init_value
         self.stage_names = ["stem"] + [f"stage{idx}" for idx in range(1, len(depths) + 1)]
-        self.set_output_features_output_indices(out_indices=out_indices, out_features=out_features)
+        self._out_features, self._out_indices = get_aligned_output_features_output_indices(
+            out_features=out_features, out_indices=out_indices, stage_names=self.stage_names
+        )
 
 
 __all__ = ["DinatConfig"]

@@ -1,3 +1,4 @@
+# coding=utf-8
 # Copyright 2023 The HuggingFace Inc. team. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,22 +14,24 @@
 # limitations under the License.
 """Informer model configuration"""
 
-from ...configuration_utils import PreTrainedConfig
+from typing import Optional, Union
+
+from ...configuration_utils import PretrainedConfig
 from ...utils import logging
 
 
 logger = logging.get_logger(__name__)
 
 
-class InformerConfig(PreTrainedConfig):
+class InformerConfig(PretrainedConfig):
     r"""
     This is the configuration class to store the configuration of an [`InformerModel`]. It is used to instantiate an
     Informer model according to the specified arguments, defining the model architecture. Instantiating a configuration
     with the defaults will yield a similar configuration to that of the Informer
     [huggingface/informer-tourism-monthly](https://huggingface.co/huggingface/informer-tourism-monthly) architecture.
 
-    Configuration objects inherit from [`PreTrainedConfig`] can be used to control the model outputs. Read the
-    documentation from [`PreTrainedConfig`] for more information.
+    Configuration objects inherit from [`PretrainedConfig`] can be used to control the model outputs. Read the
+    documentation from [`PretrainedConfig`] for more information.
 
     Args:
         prediction_length (`int`):
@@ -134,19 +137,19 @@ class InformerConfig(PreTrainedConfig):
 
     def __init__(
         self,
-        prediction_length: int | None = None,
-        context_length: int | None = None,
+        prediction_length: Optional[int] = None,
+        context_length: Optional[int] = None,
         distribution_output: str = "student_t",
         loss: str = "nll",
         input_size: int = 1,
-        lags_sequence: list[int] | None = None,
-        scaling: str | bool | None = "mean",
+        lags_sequence: Optional[list[int]] = None,
+        scaling: Optional[Union[str, bool]] = "mean",
         num_dynamic_real_features: int = 0,
         num_static_real_features: int = 0,
         num_static_categorical_features: int = 0,
         num_time_features: int = 0,
-        cardinality: list[int] | None = None,
-        embedding_dimension: list[int] | None = None,
+        cardinality: Optional[list[int]] = None,
+        embedding_dimension: Optional[list[int]] = None,
         d_model: int = 64,
         encoder_ffn_dim: int = 32,
         decoder_ffn_dim: int = 32,

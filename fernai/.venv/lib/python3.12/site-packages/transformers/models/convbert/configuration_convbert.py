@@ -1,3 +1,4 @@
+# coding=utf-8
 # Copyright The HuggingFace team. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,28 +14,32 @@
 # limitations under the License.
 """ConvBERT model configuration"""
 
-from ...configuration_utils import PreTrainedConfig
+from collections import OrderedDict
+from collections.abc import Mapping
+
+from ...configuration_utils import PretrainedConfig
+from ...onnx import OnnxConfig
 from ...utils import logging
 
 
 logger = logging.get_logger(__name__)
 
 
-class ConvBertConfig(PreTrainedConfig):
+class ConvBertConfig(PretrainedConfig):
     r"""
     This is the configuration class to store the configuration of a [`ConvBertModel`]. It is used to instantiate an
     ConvBERT model according to the specified arguments, defining the model architecture. Instantiating a configuration
     with the defaults will yield a similar configuration to that of the ConvBERT
     [YituTech/conv-bert-base](https://huggingface.co/YituTech/conv-bert-base) architecture.
 
-    Configuration objects inherit from [`PreTrainedConfig`] and can be used to control the model outputs. Read the
-    documentation from [`PreTrainedConfig`] for more information.
+    Configuration objects inherit from [`PretrainedConfig`] and can be used to control the model outputs. Read the
+    documentation from [`PretrainedConfig`] for more information.
 
 
     Args:
         vocab_size (`int`, *optional*, defaults to 30522):
             Vocabulary size of the ConvBERT model. Defines the number of different tokens that can be represented by
-            the `inputs_ids` passed when calling [`ConvBertModel`].
+            the `inputs_ids` passed when calling [`ConvBertModel`] or [`TFConvBertModel`].
         hidden_size (`int`, *optional*, defaults to 768):
             Dimensionality of the encoder layers and the pooler layer.
         num_hidden_layers (`int`, *optional*, defaults to 12):
@@ -54,7 +59,7 @@ class ConvBertConfig(PreTrainedConfig):
             The maximum sequence length that this model might ever be used with. Typically set this to something large
             just in case (e.g., 512 or 1024 or 2048).
         type_vocab_size (`int`, *optional*, defaults to 2):
-            The vocabulary size of the `token_type_ids` passed when calling [`ConvBertModel`].
+            The vocabulary size of the `token_type_ids` passed when calling [`ConvBertModel`] or [`TFConvBertModel`].
         initializer_range (`float`, *optional*, defaults to 0.02):
             The standard deviation of the truncated_normal_initializer for initializing all weight matrices.
         layer_norm_eps (`float`, *optional*, defaults to 1e-12):
@@ -107,19 +112,15 @@ class ConvBertConfig(PreTrainedConfig):
         conv_kernel_size=9,
         num_groups=1,
         classifier_dropout=None,
-        is_decoder=False,
-        add_cross_attention=False,
-        tie_word_embeddings=True,
         **kwargs,
     ):
-        super().__init__(**kwargs)
-        self.pad_token_id = pad_token_id
-        self.bos_token_id = bos_token_id
-        self.eos_token_id = eos_token_id
-        self.tie_word_embeddings = tie_word_embeddings
+        super().__init__(
+            pad_token_id=pad_token_id,
+            bos_token_id=bos_token_id,
+            eos_token_id=eos_token_id,
+            **kwargs,
+        )
 
-        self.is_decoder = is_decoder
-        self.add_cross_attention = add_cross_attention
         self.vocab_size = vocab_size
         self.hidden_size = hidden_size
         self.num_hidden_layers = num_hidden_layers
@@ -139,4 +140,21 @@ class ConvBertConfig(PreTrainedConfig):
         self.classifier_dropout = classifier_dropout
 
 
-__all__ = ["ConvBertConfig"]
+# Copied from transformers.models.bert.configuration_bert.BertOnnxConfig
+class ConvBertOnnxConfig(OnnxConfig):
+    @property
+    def inputs(self) -> Mapping[str, Mapping[int, str]]:
+        if self.task == "multiple-choice":
+            dynamic_axis = {0: "batch", 1: "choice", 2: "sequence"}
+        else:
+            dynamic_axis = {0: "batch", 1: "sequence"}
+        return OrderedDict(
+            [
+                ("input_ids", dynamic_axis),
+                ("attention_mask", dynamic_axis),
+                ("token_type_ids", dynamic_axis),
+            ]
+        )
+
+
+__all__ = ["ConvBertConfig", "ConvBertOnnxConfig"]

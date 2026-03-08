@@ -1,3 +1,4 @@
+# coding=utf-8
 # Copyright 2021 The HuggingFace Inc. team.
 # Copyright (c) 2018, NVIDIA CORPORATION.  All rights reserved.
 #
@@ -14,7 +15,7 @@
 # limitations under the License.
 
 
-from ...configuration_utils import PreTrainedConfig
+from ...configuration_utils import PretrainedConfig
 from ...utils import logging
 from ..auto.configuration_auto import AutoConfig
 
@@ -22,22 +23,22 @@ from ..auto.configuration_auto import AutoConfig
 logger = logging.get_logger(__name__)
 
 
-class SpeechEncoderDecoderConfig(PreTrainedConfig):
+class SpeechEncoderDecoderConfig(PretrainedConfig):
     r"""
     [`SpeechEncoderDecoderConfig`] is the configuration class to store the configuration of a
     [`SpeechEncoderDecoderModel`]. It is used to instantiate an Encoder Decoder model according to the specified
     arguments, defining the encoder and decoder configs.
 
-    Configuration objects inherit from [`PreTrainedConfig`] and can be used to control the model outputs. Read the
-    documentation from [`PreTrainedConfig`] for more information.
+    Configuration objects inherit from [`PretrainedConfig`] and can be used to control the model outputs. Read the
+    documentation from [`PretrainedConfig`] for more information.
 
     Args:
         kwargs (*optional*):
             Dictionary of keyword arguments. Notably:
 
-                - **encoder** ([`PreTrainedConfig`], *optional*) -- An instance of a configuration object that defines
+                - **encoder** ([`PretrainedConfig`], *optional*) -- An instance of a configuration object that defines
                   the encoder config.
-                - **decoder** ([`PreTrainedConfig`], *optional*) -- An instance of a configuration object that defines
+                - **decoder** ([`PretrainedConfig`], *optional*) -- An instance of a configuration object that defines
                   the decoder config.
 
     Examples:
@@ -92,8 +93,8 @@ class SpeechEncoderDecoderConfig(PreTrainedConfig):
 
     @classmethod
     def from_encoder_decoder_configs(
-        cls, encoder_config: PreTrainedConfig, decoder_config: PreTrainedConfig, **kwargs
-    ) -> PreTrainedConfig:
+        cls, encoder_config: PretrainedConfig, decoder_config: PretrainedConfig, **kwargs
+    ) -> PretrainedConfig:
         r"""
         Instantiate a [`SpeechEncoderDecoderConfig`] (or a derived class) from a pre-trained encoder model
         configuration and decoder model configuration.

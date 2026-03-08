@@ -1,3 +1,4 @@
+# coding=utf-8
 # Copyright 2023 HUST-VL and The HuggingFace Inc. team. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,14 +15,14 @@
 """PyTorch ViTMatte model."""
 
 from dataclasses import dataclass
+from typing import Optional
 
 import torch
 from torch import nn
 
-from ... import initialization as init
-from ...backbone_utils import load_backbone
 from ...modeling_utils import PreTrainedModel
 from ...utils import ModelOutput, auto_docstring
+from ...utils.backbone_utils import load_backbone
 from .configuration_vitmatte import VitMatteConfig
 
 
@@ -43,30 +44,24 @@ class ImageMattingOutput(ModelOutput):
         (also called feature maps) of the model at the output of each stage.
     """
 
-    loss: torch.FloatTensor | None = None
-    alphas: torch.FloatTensor | None = None
-    hidden_states: tuple[torch.FloatTensor] | None = None
-    attentions: tuple[torch.FloatTensor] | None = None
+    loss: Optional[torch.FloatTensor] = None
+    alphas: Optional[torch.FloatTensor] = None
+    hidden_states: Optional[tuple[torch.FloatTensor]] = None
+    attentions: Optional[tuple[torch.FloatTensor]] = None
 
 
 @auto_docstring
 class VitMattePreTrainedModel(PreTrainedModel):
     config: VitMatteConfig
     main_input_name = "pixel_values"
-    input_modalities = ("image",)
     supports_gradient_checkpointing = True
     _no_split_modules = []
 
-    @torch.no_grad()
     def _init_weights(self, module: nn.Module):
         if isinstance(module, (nn.Conv2d, nn.BatchNorm2d)):
-            init.normal_(module.weight, mean=0.0, std=self.config.initializer_range)
+            module.weight.data.normal_(mean=0.0, std=self.config.initializer_range)
             if module.bias is not None:
-                init.zeros_(module.bias)
-            if getattr(module, "running_mean", None) is not None:
-                init.zeros_(module.running_mean)
-                init.ones_(module.running_var)
-                init.zeros_(module.num_batches_tracked)
+                module.bias.data.zero_()
 
 
 class VitMatteBasicConv3x3(nn.Module):
@@ -231,12 +226,11 @@ class VitMatteForImageMatting(VitMattePreTrainedModel):
     @auto_docstring
     def forward(
         self,
-        pixel_values: torch.Tensor | None = None,
-        output_attentions: bool | None = None,
-        output_hidden_states: bool | None = None,
-        labels: torch.Tensor | None = None,
-        return_dict: bool | None = None,
-        **kwargs,
+        pixel_values: Optional[torch.Tensor] = None,
+        output_attentions: Optional[bool] = None,
+        output_hidden_states: Optional[bool] = None,
+        labels: Optional[torch.Tensor] = None,
+        return_dict: Optional[bool] = None,
     ):
         r"""
         labels (`torch.LongTensor` of shape `(batch_size, height, width)`, *optional*):

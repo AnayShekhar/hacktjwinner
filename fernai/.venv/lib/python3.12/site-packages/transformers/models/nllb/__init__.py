@@ -19,6 +19,7 @@ from ...utils.import_utils import define_import_structure
 
 if TYPE_CHECKING:
     from .tokenization_nllb import *
+    from .tokenization_nllb_fast import *
 else:
     import sys
 

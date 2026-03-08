@@ -19,7 +19,9 @@ from ...utils.import_utils import define_import_structure
 
 if TYPE_CHECKING:
     from .configuration_regnet import *
+    from .modeling_flax_regnet import *
     from .modeling_regnet import *
+    from .modeling_tf_regnet import *
 else:
     import sys
 

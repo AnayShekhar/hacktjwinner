@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   SafeAreaView,
   StyleSheet,
@@ -6,24 +6,66 @@ import {
   View,
   ScrollView,
   TouchableOpacity,
+  Share,
 } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
 
-import { getLetter } from '@/stores/letterStore';
-
-const GREEN = '#1a3a2a';
-const LIME = '#a8e063';
+import { getLetter, getCleanBillExplanation, setAppealRequested, setAppealUsed, getAppealUsed } from '@/stores/letterStore';
+import { Palette, Radius } from '@/constants/design';
 
 export default function LetterScreen() {
   const router = useRouter();
-  const content = getLetter() ?? 'No letter available.';
+  const letterContent = getLetter() ?? '';
+  const cleanExplanation = getCleanBillExplanation();
+  const appealUsed = getAppealUsed();
+  const isCleanBill = !letterContent && !!cleanExplanation;
+  const isPostAppeal = isCleanBill && appealUsed;
+
+  const content = isCleanBill
+    ? isPostAppeal
+      ? 'We re-audited this bill after you requested an appeal. Our conclusion remains the same: we did not find any overcharges or misused CPT codes.\n\n' + (cleanExplanation ?? '')
+      : cleanExplanation!
+    : (letterContent || 'No letter available.');
+  const title = isCleanBill
+    ? (isPostAppeal ? 'Re-audit: Why we found no issues' : 'Why we found no issues')
+    : 'Dispute Letter';
+  const subtitleLine = isCleanBill
+    ? (isPostAppeal
+        ? 'Result of the re-audit after your appeal. You cannot appeal again for this bill.'
+        : 'Detailed explanation of why no overcharges or CPT misuse were found.')
+    : 'Review and share this letter with your provider or insurer.';
+  const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'error'>('idle');
+  const canAppeal = isCleanBill && !appealUsed;
+
+  const handleShare = async () => {
+    try {
+      await Share.share({
+        message: content,
+        title: 'Dispute Letter',
+      });
+    } catch {
+      // User cancelled or share not available
+    }
+  };
+
+  const handleCopy = async () => {
+    try {
+      await Clipboard.setStringAsync(content);
+      setCopyStatus('copied');
+      setTimeout(() => setCopyStatus('idle'), 2000);
+    } catch {
+      setCopyStatus('error');
+      setTimeout(() => setCopyStatus('idle'), 2000);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Dispute Letter</Text>
+        <Text style={styles.title}>{title}</Text>
         <Text style={styles.subtitle}>
-          Review and share this letter with your provider or insurer.
+          {subtitleLine}
         </Text>
       </View>
       <ScrollView contentContainerStyle={styles.contentContainer}>
@@ -32,6 +74,26 @@ export default function LetterScreen() {
         </View>
       </ScrollView>
       <View style={styles.bottomBar}>
+        <TouchableOpacity style={styles.shareButton} onPress={handleShare}>
+          <Text style={styles.shareButtonText}>Share</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.copyButton} onPress={handleCopy}>
+          <Text style={styles.copyButtonText}>
+            {copyStatus === 'copied' ? 'Copied!' : copyStatus === 'error' ? 'Failed' : 'Copy'}
+          </Text>
+        </TouchableOpacity>
+        {canAppeal && (
+          <TouchableOpacity
+            style={styles.appealButton}
+            onPress={() => {
+              setAppealUsed(true);
+              setAppealRequested(true);
+              router.back();
+            }}
+          >
+            <Text style={styles.appealButtonText}>Appeal</Text>
+          </TouchableOpacity>
+        )}
         <TouchableOpacity style={styles.secondaryButton} onPress={() => router.back()}>
           <Text style={styles.secondaryButtonText}>Back to Analysis</Text>
         </TouchableOpacity>
@@ -43,30 +105,35 @@ export default function LetterScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f3f4f6',
+    backgroundColor: Palette.appBg,
   },
   header: {
+    marginHorizontal: 16,
+    marginTop: 10,
+    marginBottom: 10,
     paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 8,
+    paddingTop: 18,
+    paddingBottom: 14,
+    backgroundColor: Palette.primary,
+    borderRadius: Radius.screen,
   },
   title: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: GREEN,
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#FFFFFF',
   },
   subtitle: {
     fontSize: 13,
-    color: '#6b7280',
+    color: '#CDE3D8',
     marginTop: 4,
   },
   contentContainer: {
     paddingHorizontal: 16,
-    paddingBottom: 100,
+    paddingBottom: 130,
   },
   card: {
-    backgroundColor: '#ffffff',
-    borderRadius: 18,
+    backgroundColor: Palette.card,
+    borderRadius: Radius.card,
     padding: 16,
     marginVertical: 8,
     shadowColor: '#000',
@@ -82,18 +149,64 @@ const styles = StyleSheet.create({
   },
   bottomBar: {
     position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: GREEN,
+    left: 14,
+    right: 14,
+    bottom: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    backgroundColor: Palette.primary,
+    borderRadius: 26,
+    borderTopWidth: 0,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-end',
+    justifyContent: 'center',
+    flexWrap: 'wrap',
+    gap: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.12,
+    shadowOffset: { width: 0, height: 6 },
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  shareButton: {
+    backgroundColor: Palette.accent,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 999,
+  },
+  shareButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 14,
+  },
+  copyButton: {
+    borderColor: '#CDE3D8',
+    borderWidth: 1.5,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 999,
+    backgroundColor: 'transparent',
+  },
+  copyButtonText: {
+    color: '#D7F0E3',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  appealButton: {
+    borderColor: '#d1fae5',
+    borderWidth: 1.5,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 999,
+    backgroundColor: 'transparent',
+  },
+  appealButtonText: {
+    color: '#d1fae5',
+    fontWeight: '600',
+    fontSize: 14,
   },
   secondaryButton: {
-    borderColor: LIME,
+    borderColor: '#CDE3D8',
     borderWidth: 1.5,
     paddingVertical: 8,
     paddingHorizontal: 16,
@@ -101,7 +214,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   secondaryButtonText: {
-    color: LIME,
+    color: '#D7F0E3',
     fontWeight: '600',
     fontSize: 14,
   },

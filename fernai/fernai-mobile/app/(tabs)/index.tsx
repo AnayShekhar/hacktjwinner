@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   SafeAreaView,
   View,
@@ -6,16 +6,29 @@ import {
   TouchableOpacity,
   StyleSheet,
   StatusBar,
+  ActivityIndicator,
+  ScrollView,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import { useRouter } from 'expo-router';
 
-const GREEN = '#1a3a2a';
-const LIME = '#a8e063';
+import { getApiBaseUrl } from '@/constants/api';
+import { Palette, Radius } from '@/constants/design';
 
 export default function HomeScreen() {
   const router = useRouter();
+  const [opening, setOpening] = useState(false);
+  const [serverOk, setServerOk] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`${getApiBaseUrl()}/health`)
+      .then((r) => r.ok)
+      .then((ok) => { if (!cancelled) setServerOk(ok); })
+      .catch(() => { if (!cancelled) setServerOk(false); });
+    return () => { cancelled = true; };
+  }, []);
 
   const handleScanBill = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
@@ -24,70 +37,116 @@ export default function HomeScreen() {
       return;
     }
 
-    const result = await ImagePicker.launchCameraAsync({
-      allowsEditing: false,
-      quality: 0.8,
-    });
+    setOpening(true);
+    try {
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: false,
+        quality: 0.8,
+      });
 
-    if (result.canceled || !result.assets || !result.assets[0]?.uri) {
-      return;
+      if (result.canceled || !result.assets || !result.assets[0]?.uri) {
+        return;
+      }
+
+      const uri = result.assets[0].uri;
+      router.push({
+        pathname: '/bill-pages',
+        params: { uri, fileType: 'image' },
+      });
+    } finally {
+      setOpening(false);
     }
-
-    const uri = result.assets[0].uri;
-    router.push({
-      pathname: '/analysis',
-      params: { uri, fileType: 'image' },
-    });
   };
 
   const handleUploadPdf = async () => {
-    const result = await DocumentPicker.getDocumentAsync({
-      type: 'application/pdf',
-      multiple: false,
-      copyToCacheDirectory: true,
-    });
+    setOpening(true);
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: 'application/pdf',
+        multiple: false,
+        copyToCacheDirectory: true,
+      });
 
-    // In SDK 51, `canceled` is a boolean and selected files are in `assets`
-    // Fallback to older `assets` shape if needed.
-    // @ts-expect-error SDK version differences
-    const assets = result.assets || (result.type === 'success' ? [result] : []);
+      // In SDK 51, `canceled` is a boolean and selected files are in `assets`
+      // Fallback to older `assets` shape if needed.
+      // @ts-expect-error SDK version differences
+      const assets = result.assets || (result.type === 'success' ? [result] : []);
 
-    if ((result as any).canceled || !assets || !assets[0]?.uri) {
-      return;
+      if ((result as any).canceled || !assets || !assets[0]?.uri) {
+        return;
+      }
+
+      const uri = assets[0].uri;
+      router.push({
+        pathname: '/bill-pages',
+        params: { uri, fileType: 'pdf' },
+      });
+    } finally {
+      setOpening(false);
     }
-
-    const uri = assets[0].uri;
-    router.push({
-      pathname: '/analysis',
-      params: { uri, fileType: 'pdf' },
-    });
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
-      <View style={styles.heroCard}>
-        <Text style={styles.logo}>Fern AI</Text>
-        <Text style={styles.tagline}>Fight Back Against Overcharges</Text>
-        <Text style={styles.subtitle}>
-          Scan or upload your hospital bill and let Fern AI audit it for fraud and overcharges.
-        </Text>
-
-        <TouchableOpacity style={styles.primaryButton} onPress={handleScanBill}>
-          <Text style={styles.primaryButtonText}>Scan Bill</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.secondaryButton} onPress={handleUploadPdf}>
-          <Text style={styles.secondaryButtonText}>Upload PDF</Text>
-        </TouchableOpacity>
-
-        <View style={styles.steps}>
-          <Text style={styles.stepsTitle}>How it works</Text>
-          <Text style={styles.stepItem}>1. Scan your bill</Text>
-          <Text style={styles.stepItem}>2. Fern AI audits every line</Text>
-          <Text style={styles.stepItem}>3. Get a dispute letter</Text>
+      <ScrollView contentContainerStyle={styles.content}>
+        <View style={styles.header}>
+          <Text style={styles.logo}>Fern AI</Text>
+          <Text style={styles.headerSub}>Save money on your medical bills</Text>
         </View>
-      </View>
+
+        <View style={styles.heroImageCard}>
+          <Text style={styles.heroTitle}>Save on your bills</Text>
+          <Text style={styles.heroSub}>Let our AI find hidden overcharges in seconds.</Text>
+        </View>
+
+        <TouchableOpacity
+          style={[styles.primaryButton, opening && styles.buttonDisabled]}
+          onPress={handleScanBill}
+          disabled={opening}
+        >
+          {opening ? (
+            <View style={styles.buttonLoading}>
+              <ActivityIndicator size="small" color="#ffffff" />
+              <Text style={styles.primaryButtonText}>Opening...</Text>
+            </View>
+          ) : (
+            <Text style={styles.primaryButtonText}>Scan Bill</Text>
+          )}
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.secondaryButton, opening && styles.buttonDisabled]}
+          onPress={handleUploadPdf}
+          disabled={opening}
+        >
+          <Text style={styles.secondaryButtonText}>{opening ? 'Opening...' : 'Upload PDF'}</Text>
+        </TouchableOpacity>
+
+        {serverOk !== null && (
+          <View style={[styles.statusPill, serverOk ? styles.statusOk : styles.statusOff]}>
+            <Text style={styles.statusText}>
+              {serverOk ? 'Server connected' : 'Cannot reach server'}
+            </Text>
+          </View>
+        )}
+
+        <View style={styles.stepsCard}>
+          <Text style={styles.stepsTitle}>How it works</Text>
+          <View style={styles.stepRow}>
+            <Text style={styles.stepNumber}>1</Text>
+            <Text style={styles.stepItem}>Snap or upload your bill pages.</Text>
+          </View>
+          <View style={styles.stepRow}>
+            <Text style={styles.stepNumber}>2</Text>
+            <Text style={styles.stepItem}>Fern AI checks prices and code consistency.</Text>
+          </View>
+          <View style={styles.stepRow}>
+            <Text style={styles.stepNumber}>3</Text>
+            <Text style={styles.stepItem}>View savings and generate your letter.</Text>
+          </View>
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -95,70 +154,135 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: GREEN,
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: Palette.appBg,
   },
-  heroCard: {
-    width: '88%',
-    backgroundColor: '#f9fafb',
-    borderRadius: 32,
-    padding: 24,
+  content: {
+    paddingHorizontal: 18,
+    paddingTop: 12,
+    paddingBottom: 120,
+  },
+  header: {
+    backgroundColor: Palette.primary,
+    borderRadius: Radius.screen,
+    padding: 20,
+    marginBottom: 14,
   },
   logo: {
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: '800',
-    color: GREEN,
-    marginBottom: 4,
+    color: '#FFFFFF',
   },
-  tagline: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: GREEN,
-    marginBottom: 8,
+  headerSub: {
+    marginTop: 5,
+    fontSize: 14,
+    color: '#D8EADF',
   },
-  subtitle: {
+  heroImageCard: {
+    backgroundColor: '#9B5A2A',
+    borderRadius: Radius.card,
+    padding: 18,
+    minHeight: 160,
+    justifyContent: 'flex-end',
+    marginBottom: 14,
+  },
+  heroTitle: {
+    color: '#FFFFFF',
+    fontSize: 24,
+    fontWeight: '800',
+  },
+  heroSub: {
+    color: '#F8F8F8',
     fontSize: 13,
-    color: '#6b7280',
-    marginBottom: 20,
+    marginTop: 4,
+  },
+  statusPill: {
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+    borderRadius: Radius.pill,
+    alignSelf: 'flex-start',
+    marginBottom: 14,
+  },
+  statusOk: {
+    backgroundColor: '#D9F2DF',
+  },
+  statusOff: {
+    backgroundColor: '#FEE2E2',
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#1C3528',
   },
   primaryButton: {
-    backgroundColor: LIME,
-    paddingVertical: 14,
-    borderRadius: 999,
+    backgroundColor: Palette.accent,
+    paddingVertical: 15,
+    borderRadius: Radius.pill,
     alignItems: 'center',
     marginBottom: 10,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  buttonDisabled: {
+    opacity: 0.7,
+  },
+  buttonLoading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   primaryButtonText: {
-    color: GREEN,
+    color: '#FFFFFF',
     fontWeight: '700',
     fontSize: 16,
   },
   secondaryButton: {
-    borderColor: GREEN,
-    borderWidth: 1.5,
-    paddingVertical: 12,
-    borderRadius: 999,
+    borderColor: Palette.border,
+    borderWidth: 1.2,
+    paddingVertical: 13,
+    borderRadius: Radius.pill,
     alignItems: 'center',
-    marginBottom: 18,
-    backgroundColor: '#ffffff',
+    marginBottom: 14,
+    backgroundColor: Palette.card,
   },
   secondaryButtonText: {
-    color: GREEN,
+    color: Palette.text,
     fontWeight: '600',
     fontSize: 15,
   },
-  steps: {
-    marginTop: 4,
+  stepsCard: {
+    backgroundColor: Palette.card,
+    borderRadius: Radius.card,
+    padding: 16,
   },
   stepsTitle: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#6b7280',
-    marginBottom: 4,
+    fontSize: 16,
+    fontWeight: '700',
+    color: Palette.text,
+    marginBottom: 10,
+  },
+  stepRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+    gap: 10,
+  },
+  stepNumber: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    textAlign: 'center',
+    lineHeight: 24,
+    backgroundColor: Palette.accentSoft,
+    color: Palette.accent,
+    fontWeight: '800',
+    fontSize: 12,
   },
   stepItem: {
     fontSize: 13,
-    color: '#4b5563',
+    color: Palette.muted,
+    flex: 1,
   },
 });

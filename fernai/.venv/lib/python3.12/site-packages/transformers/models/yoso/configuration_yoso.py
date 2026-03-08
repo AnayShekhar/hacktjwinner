@@ -1,3 +1,4 @@
+# coding=utf-8
 # Copyright 2022 The HuggingFace Inc. team. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,22 +14,22 @@
 # limitations under the License.
 """YOSO model configuration"""
 
-from ...configuration_utils import PreTrainedConfig
+from ...configuration_utils import PretrainedConfig
 from ...utils import logging
 
 
 logger = logging.get_logger(__name__)
 
 
-class YosoConfig(PreTrainedConfig):
+class YosoConfig(PretrainedConfig):
     r"""
     This is the configuration class to store the configuration of a [`YosoModel`]. It is used to instantiate an YOSO
     model according to the specified arguments, defining the model architecture. Instantiating a configuration with the
     defaults will yield a similar configuration to that of the YOSO
     [uw-madison/yoso-4096](https://huggingface.co/uw-madison/yoso-4096) architecture.
 
-    Configuration objects inherit from [`PreTrainedConfig`] and can be used to control the model outputs. Read the
-    documentation from [`PreTrainedConfig`] for more information.
+    Configuration objects inherit from [`PretrainedConfig`] and can be used to control the model outputs. Read the
+    documentation from [`PretrainedConfig`] for more information.
 
 
     Args:
@@ -59,6 +60,8 @@ class YosoConfig(PreTrainedConfig):
             The standard deviation of the truncated_normal_initializer for initializing all weight matrices.
         layer_norm_eps (`float`, *optional*, defaults to 1e-12):
             The epsilon used by the layer normalization layers.
+        position_embedding_type (`str`, *optional*, defaults to `"absolute"`):
+            Type of position embedding. Choose one of `"absolute"`, `"relative_key"`, `"relative_key_query"`.
         use_expectation (`bool`, *optional*, defaults to `True`):
             Whether or not to use YOSO Expectation. Overrides any effect of num_hash.
         hash_code_len (`int`, *optional*, defaults to 9):
@@ -103,6 +106,7 @@ class YosoConfig(PreTrainedConfig):
         type_vocab_size=1,
         initializer_range=0.02,
         layer_norm_eps=1e-12,
+        position_embedding_type="absolute",
         use_expectation=True,
         hash_code_len=9,
         num_hash=64,
@@ -112,17 +116,10 @@ class YosoConfig(PreTrainedConfig):
         pad_token_id=1,
         bos_token_id=0,
         eos_token_id=2,
-        add_cross_attention=False,
-        tie_word_embeddings=True,
         **kwargs,
     ):
-        super().__init__(**kwargs)
-        self.pad_token_id = pad_token_id
-        self.bos_token_id = bos_token_id
-        self.eos_token_id = eos_token_id
-        self.tie_word_embeddings = tie_word_embeddings
+        super().__init__(pad_token_id=pad_token_id, bos_token_id=bos_token_id, eos_token_id=eos_token_id, **kwargs)
 
-        self.add_cross_attention = add_cross_attention
         self.vocab_size = vocab_size
         self.max_position_embeddings = max_position_embeddings
         self.hidden_size = hidden_size
@@ -135,6 +132,7 @@ class YosoConfig(PreTrainedConfig):
         self.initializer_range = initializer_range
         self.type_vocab_size = type_vocab_size
         self.layer_norm_eps = layer_norm_eps
+        self.position_embedding_type = position_embedding_type
         self.use_expectation = use_expectation
         self.hash_code_len = hash_code_len
         self.num_hash = num_hash

@@ -1,12 +1,16 @@
+# Core API
 fastapi
 uvicorn[standard]
 python-multipart
 python-dotenv
 groq
-chromadb
-sentence-transformers
+
+# Pinned to avoid pip ResolutionImpossible (chromadb + sentence-transformers)
+numpy<2
+chromadb>=0.4.22,<0.5
+sentence-transformers>=2.2.2,<3.0
+
 scikit-learn
 pyngrok
 Pillow
 pymupdf
-

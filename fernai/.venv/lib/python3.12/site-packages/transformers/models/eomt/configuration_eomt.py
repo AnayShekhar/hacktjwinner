@@ -4,6 +4,7 @@
 #             the file from the modular. If any change should be done, please apply the change to the
 #                          modular_eomt.py file directly. One of our CI enforces this.
 #                🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨
+# coding=utf-8
 # Copyright 2025 Mobile Perception Systems Lab at TU/e and The HuggingFace Inc. team. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,10 +19,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from ...configuration_utils import PreTrainedConfig
+from ...configuration_utils import PretrainedConfig
 
 
-class EomtConfig(PreTrainedConfig):
+class EomtConfig(PretrainedConfig):
     r"""
     This is the configuration class to store the configuration of a [`EomtForUniversalSegmentation`]. It is used to instantiate an EoMT model
     according to the specified arguments, defining the model architecture. Instantiating a configuration with the
@@ -29,8 +30,8 @@ class EomtConfig(PreTrainedConfig):
     [tue-mps/coco_panoptic_eomt_large_640](https://huggingface.co/tue-mps/coco_panoptic_eomt_large_640)
     architecture.
 
-    Configuration objects inherit from [`PreTrainedConfig`] and can be used to control the model outputs. Read the
-    documentation from [`PreTrainedConfig`] for more information.
+    Configuration objects inherit from [`PretrainedConfig`] and can be used to control the model outputs. Read the
+    documentation from [`PretrainedConfig`] for more information.
 
     Args:
         hidden_size (`int`, *optional*, defaults to 1024):
@@ -133,6 +134,19 @@ class EomtConfig(PreTrainedConfig):
         num_register_tokens=4,
         **kwargs,
     ):
+        super().__init__(**kwargs)
+
+        self.hidden_size = hidden_size
+        self.num_hidden_layers = num_hidden_layers
+        self.num_attention_heads = num_attention_heads
+        self.hidden_act = hidden_act
+        self.hidden_dropout_prob = hidden_dropout_prob
+        self.initializer_range = initializer_range
+        self.layer_norm_eps = layer_norm_eps
+        self.image_size = image_size
+        self.patch_size = patch_size
+        self.num_channels = num_channels
+
         self.mlp_ratio = mlp_ratio
         self.attention_dropout = attention_dropout
         self.layerscale_value = layerscale_value
@@ -149,18 +163,6 @@ class EomtConfig(PreTrainedConfig):
         self.importance_sample_ratio = importance_sample_ratio
         self.num_queries = num_queries
         self.num_register_tokens = num_register_tokens
-        self.hidden_size = hidden_size
-        self.num_hidden_layers = num_hidden_layers
-        self.num_attention_heads = num_attention_heads
-        self.hidden_act = hidden_act
-        self.hidden_dropout_prob = hidden_dropout_prob
-        self.initializer_range = initializer_range
-        self.layer_norm_eps = layer_norm_eps
-        self.image_size = image_size
-        self.patch_size = patch_size
-        self.num_channels = num_channels
-
-        super().__init__(**kwargs)
 
 
 __all__ = ["EomtConfig"]

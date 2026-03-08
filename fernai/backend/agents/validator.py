@@ -8,7 +8,8 @@ from ..rag.retriever import retrieve_cpt_matches
 from ..schemas import BillJSON
 
 # ChromaDB cosine distance: 0 = identical, higher = less similar. Flag if no match or best > this.
-CPT_MATCH_DISTANCE_THRESHOLD = 0.6
+# Tighter threshold = stricter match (fewer false "reasonable" on mismatched codes).
+CPT_MATCH_DISTANCE_THRESHOLD = 0.5
 
 # Default path to CPT CSV relative to backend package.
 _DEFAULT_CPT_CSV = Path(__file__).resolve().parent.parent / "data" / "cpt_codes.csv"

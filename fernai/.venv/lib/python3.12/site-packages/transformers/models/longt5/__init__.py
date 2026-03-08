@@ -19,6 +19,7 @@ from ...utils.import_utils import define_import_structure
 
 if TYPE_CHECKING:
     from .configuration_longt5 import *
+    from .modeling_flax_longt5 import *
     from .modeling_longt5 import *
 else:
     import sys

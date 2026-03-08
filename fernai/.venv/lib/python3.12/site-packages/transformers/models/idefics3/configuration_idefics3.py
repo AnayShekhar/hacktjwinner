@@ -1,3 +1,4 @@
+# coding=utf-8
 # Copyright 2024 The HuggingFace Inc. team. All rights reserved.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,7 +13,7 @@
 # limitations under the License.
 """Idefics3 model configuration"""
 
-from ...configuration_utils import PreTrainedConfig
+from ...configuration_utils import PretrainedConfig
 from ...utils import logging
 from ..auto import CONFIG_MAPPING, AutoConfig
 
@@ -20,7 +21,7 @@ from ..auto import CONFIG_MAPPING, AutoConfig
 logger = logging.get_logger(__name__)
 
 
-class Idefics3VisionConfig(PreTrainedConfig):
+class Idefics3VisionConfig(PretrainedConfig):
     r"""
     This is the configuration class to store the configuration of a [`Idefics3VisionModel`]. It is used to instantiate a
     Idefics3 vision encoder according to the specified arguments, defining the model architecture. Instantiating a
@@ -28,8 +29,8 @@ class Idefics3VisionConfig(PreTrainedConfig):
     [google/siglip-base-patch16-224](https://huggingface.co/google/siglip-base-patch16-224) used in the Idefics3 model
     [HuggingFaceM4/Idefics3-8B-Llama3](https://huggingface.co/HuggingFaceM4/Idefics3-8B-Llama3).
 
-    Configuration objects inherit from [`PreTrainedConfig`] and can be used to control the model outputs. Read the
-    documentation from [`PreTrainedConfig`] for more information.
+    Configuration objects inherit from [`PretrainedConfig`] and can be used to control the model outputs. Read the
+    documentation from [`PretrainedConfig`] for more information.
 
     Args:
         hidden_size (`int`, *optional*, defaults to 1152):
@@ -105,15 +106,15 @@ class Idefics3VisionConfig(PreTrainedConfig):
         self.initializer_range = initializer_range
 
 
-class Idefics3Config(PreTrainedConfig):
+class Idefics3Config(PretrainedConfig):
     r"""
     This is the configuration class to store the configuration of a [`Idefics3Model`]. It is used to instantiate a
     Idefics3 model according to the specified arguments, defining the model architecture. Instantiating a
     configuration with the defaults will yield a similar configuration to that of the model of the Idefics3
     [HuggingFaceM4/Idefics3-8B-Llama3](https://huggingface.co/HuggingFaceM4/Idefics3-8B-Llama3) architecture.
 
-    Configuration objects inherit from [`PreTrainedConfig`] and can be used to control the model outputs. Read the
-    documentation from [`PreTrainedConfig`] for more information.
+    Configuration objects inherit from [`PretrainedConfig`] and can be used to control the model outputs. Read the
+    documentation from [`PretrainedConfig`] for more information.
 
     Args:
         use_cache (`bool`, *optional*, defaults to `True`):
@@ -125,7 +126,7 @@ class Idefics3Config(PreTrainedConfig):
             Whether or not to tie the word embeddings with the token embeddings.
         vision_config (`IdeficsVisionConfig` or `dict`, *optional*, defaults to `IdeficsVisionConfig`):
             Custom vision config or dict for the vision tower
-        text_config (`PreTrainedConfig` or `dict`, *optional*, defaults to `LlamaConfig`):
+        text_config (`PretrainedConfig` or `dict`, *optional*, defaults to `LlamaConfig`):
             Custom text config or dict for the text model
         scale_factor (`int`, *optional*, defaults to 2):
             The scale factor for the image encoder.
@@ -177,11 +178,13 @@ class Idefics3Config(PreTrainedConfig):
             text_config = CONFIG_MAPPING["llama"](
                 rms_norm_eps=1e-5,
                 pad_token_id=pad_token_id,
+                tie_word_embeddings=False,
             )
+
         self.text_config = text_config
         self.scale_factor = scale_factor
 
-        super().__init__(**kwargs)
+        super().__init__(**kwargs, pad_token_id=pad_token_id, tie_word_embeddings=tie_word_embeddings)
 
 
 __all__ = ["Idefics3Config", "Idefics3VisionConfig"]

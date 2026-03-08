@@ -1,3 +1,4 @@
+# coding=utf-8
 # Copyright 2023 The Kakao Enterprise Authors and the HuggingFace Inc. team. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,22 +14,22 @@
 # limitations under the License.
 """VITS model configuration"""
 
-from ...configuration_utils import PreTrainedConfig
+from ...configuration_utils import PretrainedConfig
 from ...utils import logging
 
 
 logger = logging.get_logger(__name__)
 
 
-class VitsConfig(PreTrainedConfig):
+class VitsConfig(PretrainedConfig):
     r"""
     This is the configuration class to store the configuration of a [`VitsModel`]. It is used to instantiate a VITS
     model according to the specified arguments, defining the model architecture. Instantiating a configuration with the
     defaults will yield a similar configuration to that of the VITS
     [facebook/mms-tts-eng](https://huggingface.co/facebook/mms-tts-eng) architecture.
 
-    Configuration objects inherit from [`PreTrainedConfig`] and can be used to control the model outputs. Read the
-    documentation from [`PreTrainedConfig`] for more information.
+    Configuration objects inherit from [`PretrainedConfig`] and can be used to control the model outputs. Read the
+    documentation from [`PretrainedConfig`] for more information.
 
     Args:
         vocab_size (`int`, *optional*, defaults to 38):
@@ -129,8 +130,6 @@ class VitsConfig(PreTrainedConfig):
             How random the duration prediction is. Larger values create more variation in the predicted durations.
         sampling_rate (`int`, *optional*, defaults to 16000):
             The sampling rate at which the output audio waveform is digitalized expressed in hertz (Hz).
-        pad_token_id (`int`, *optional*):
-            Padding token id.
 
     Example:
 
@@ -195,7 +194,6 @@ class VitsConfig(PreTrainedConfig):
         noise_scale=0.667,
         noise_scale_duration=0.8,
         sampling_rate=16_000,
-        pad_token_id=None,
         **kwargs,
     ):
         self.vocab_size = vocab_size
@@ -242,7 +240,6 @@ class VitsConfig(PreTrainedConfig):
         self.noise_scale = noise_scale
         self.noise_scale_duration = noise_scale_duration
         self.sampling_rate = sampling_rate
-        self.pad_token_id = pad_token_id
 
         if len(upsample_kernel_sizes) != len(upsample_rates):
             raise ValueError(

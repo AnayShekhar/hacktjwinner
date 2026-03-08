@@ -1,3 +1,4 @@
+# coding=utf-8
 # Copyright 2025 the HuggingFace Inc. team. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,7 +14,7 @@
 # limitations under the License.
 """PyTorch LFM2-VL model."""
 
-from ...configuration_utils import PreTrainedConfig
+from ...configuration_utils import PretrainedConfig
 from ...utils import logging
 from ..auto import CONFIG_MAPPING, AutoConfig
 
@@ -21,7 +22,7 @@ from ..auto import CONFIG_MAPPING, AutoConfig
 logger = logging.get_logger(__name__)
 
 
-class Lfm2VlConfig(PreTrainedConfig):
+class Lfm2VlConfig(PretrainedConfig):
     r"""
     This is the configuration class to store the configuration of a [`Lfm2VlForConditionalGeneration`]. It is used to instantiate an
     Lfm2Vl model according to the specified arguments, defining the model architecture. Instantiating a configuration
@@ -29,8 +30,8 @@ class Lfm2VlConfig(PreTrainedConfig):
 
     e.g. [LiquidAI/LFM2-VL-1.6B](https://huggingface.co/LiquidAI/LFM2-VL-1.6B)
 
-    Configuration objects inherit from [`PreTrainedConfig`] and can be used to control the model outputs. Read the
-    documentation from [`PreTrainedConfig`] for more information.
+    Configuration objects inherit from [`PretrainedConfig`] and can be used to control the model outputs. Read the
+    documentation from [`PretrainedConfig`] for more information.
 
     Args:
         vision_config (`AutoConfig | dict`,  *optional*, defaults to `Siglip2ImageConfig`):
@@ -45,15 +46,11 @@ class Lfm2VlConfig(PreTrainedConfig):
             The hidden size of the multimodal projector.
         projector_bias (`bool`, *optional*, defaults to `True`):
             Whether to use bias in the multimodal projector.
-        projector_use_layernorm (`bool`, *optional*, defaults to `True`):
-            Whether to use layernorm in the multimodal projector.
         downsample_factor (`int`, *optional*, defaults to 2):
             The downsample_factor factor of the vision backbone.
-        tie_word_embeddings (`bool`, *optional*, defaults to `True`):
-            Whether to tie the word embeddings of the text backbone.
     """
 
-    model_type = "lfm2_vl"
+    model_type = "lfm2-vl"
     sub_configs = {"text_config": AutoConfig, "vision_config": AutoConfig}
 
     def __init__(
@@ -64,16 +61,13 @@ class Lfm2VlConfig(PreTrainedConfig):
         projector_hidden_act="gelu",
         projector_hidden_size=2560,
         projector_bias=True,
-        projector_use_layernorm=True,
         downsample_factor=2,
-        tie_word_embeddings=True,
         **kwargs,
     ):
         self.image_token_id = image_token_id
         self.projector_hidden_act = projector_hidden_act
         self.projector_hidden_size = projector_hidden_size
         self.projector_bias = projector_bias
-        self.projector_use_layernorm = projector_use_layernorm
         self.downsample_factor = downsample_factor
 
         if isinstance(vision_config, dict):
@@ -90,7 +84,6 @@ class Lfm2VlConfig(PreTrainedConfig):
 
         self.vision_config = vision_config
         self.text_config = text_config
-        self.tie_word_embeddings = getattr(text_config, "tie_embedding", tie_word_embeddings)
 
         super().__init__(**kwargs)
 

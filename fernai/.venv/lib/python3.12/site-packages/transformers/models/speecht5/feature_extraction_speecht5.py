@@ -1,3 +1,4 @@
+# coding=utf-8
 # Copyright 2023 The HuggingFace Inc. team. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,7 +14,8 @@
 # limitations under the License.
 """Feature extractor class for SpeechT5."""
 
-from typing import Any
+import warnings
+from typing import Any, Optional, Union
 
 import numpy as np
 
@@ -57,12 +59,16 @@ class SpeechT5FeatureExtractor(SequenceFeatureExtractor):
             Number of ms per window.
         win_function (`str`, *optional*, defaults to `"hann_window"`):
             Name for the window function used for windowing, must be accessible via `torch.{win_function}`
+        frame_signal_scale (`float`, *optional*, defaults to 1.0):
+            Constant multiplied in creating the frames before applying DFT. This argument is deprecated.
         fmin (`float`, *optional*, defaults to 80):
             Minimum mel frequency in Hz.
         fmax (`float`, *optional*, defaults to 7600):
             Maximum mel frequency in Hz.
         mel_floor (`float`, *optional*, defaults to 1e-10):
-            Minimum value of mel frequency banks..
+            Minimum value of mel frequency banks.
+        reduction_factor (`int`, *optional*, defaults to 2):
+            Spectrogram length reduction factor. This argument is deprecated.
         return_attention_mask (`bool`, *optional*, defaults to `True`):
             Whether or not [`~SpeechT5FeatureExtractor.__call__`] should return `attention_mask`.
     """
@@ -79,9 +85,11 @@ class SpeechT5FeatureExtractor(SequenceFeatureExtractor):
         hop_length: int = 16,
         win_length: int = 64,
         win_function: str = "hann_window",
+        frame_signal_scale: float = 1.0,
         fmin: float = 80,
         fmax: float = 7600,
         mel_floor: float = 1e-10,
+        reduction_factor: int = 2,
         return_attention_mask: bool = True,
         **kwargs,
     ):
@@ -93,9 +101,11 @@ class SpeechT5FeatureExtractor(SequenceFeatureExtractor):
         self.hop_length = hop_length
         self.win_length = win_length
         self.win_function = win_function
+        self.frame_signal_scale = frame_signal_scale
         self.fmin = fmin
         self.fmax = fmax
         self.mel_floor = mel_floor
+        self.reduction_factor = reduction_factor
 
         self.sample_size = win_length * sampling_rate // 1000
         self.sample_stride = hop_length * sampling_rate // 1000
@@ -113,6 +123,17 @@ class SpeechT5FeatureExtractor(SequenceFeatureExtractor):
             norm="slaney",
             mel_scale="slaney",
         )
+
+        if frame_signal_scale != 1.0:
+            warnings.warn(
+                "The argument `frame_signal_scale` is deprecated and will be removed in version 4.30.0 of Transformers",
+                FutureWarning,
+            )
+        if reduction_factor != 2.0:
+            warnings.warn(
+                "The argument `reduction_factor` is deprecated and will be removed in version 4.30.0 of Transformers",
+                FutureWarning,
+            )
 
     @staticmethod
     # Copied from transformers.models.wav2vec2.feature_extraction_wav2vec2.Wav2Vec2FeatureExtractor.zero_mean_unit_var_norm
@@ -158,15 +179,15 @@ class SpeechT5FeatureExtractor(SequenceFeatureExtractor):
 
     def __call__(
         self,
-        audio: np.ndarray | list[float] | list[np.ndarray] | list[list[float]] | None = None,
-        audio_target: np.ndarray | list[float] | list[np.ndarray] | list[list[float]] | None = None,
-        padding: bool | str | PaddingStrategy = False,
-        max_length: int | None = None,
+        audio: Optional[Union[np.ndarray, list[float], list[np.ndarray], list[list[float]]]] = None,
+        audio_target: Optional[Union[np.ndarray, list[float], list[np.ndarray], list[list[float]]]] = None,
+        padding: Union[bool, str, PaddingStrategy] = False,
+        max_length: Optional[int] = None,
         truncation: bool = False,
-        pad_to_multiple_of: int | None = None,
-        return_attention_mask: bool | None = None,
-        return_tensors: str | TensorType | None = None,
-        sampling_rate: int | None = None,
+        pad_to_multiple_of: Optional[int] = None,
+        return_attention_mask: Optional[bool] = None,
+        return_tensors: Optional[Union[str, TensorType]] = None,
+        sampling_rate: Optional[int] = None,
         **kwargs,
     ) -> BatchFeature:
         """
@@ -212,6 +233,7 @@ class SpeechT5FeatureExtractor(SequenceFeatureExtractor):
             return_tensors (`str` or [`~utils.TensorType`], *optional*):
                 If set, will return tensors instead of list of python integers. Acceptable values are:
 
+                - `'tf'`: Return TensorFlow `tf.constant` objects.
                 - `'pt'`: Return PyTorch `torch.Tensor` objects.
                 - `'np'`: Return Numpy `np.ndarray` objects.
             sampling_rate (`int`, *optional*):
@@ -274,14 +296,14 @@ class SpeechT5FeatureExtractor(SequenceFeatureExtractor):
 
     def _process_audio(
         self,
-        speech: np.ndarray | list[float] | list[np.ndarray] | list[list[float]],
+        speech: Union[np.ndarray, list[float], list[np.ndarray], list[list[float]]],
         is_target: bool = False,
-        padding: bool | str | PaddingStrategy = False,
-        max_length: int | None = None,
+        padding: Union[bool, str, PaddingStrategy] = False,
+        max_length: Optional[int] = None,
         truncation: bool = False,
-        pad_to_multiple_of: int | None = None,
-        return_attention_mask: bool | None = None,
-        return_tensors: str | TensorType | None = None,
+        pad_to_multiple_of: Optional[int] = None,
+        return_attention_mask: Optional[bool] = None,
+        return_tensors: Optional[Union[str, TensorType]] = None,
         **kwargs,
     ) -> BatchFeature:
         is_batched_numpy = isinstance(speech, np.ndarray) and len(speech.shape) > 1

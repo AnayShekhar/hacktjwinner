@@ -1,3 +1,4 @@
+# coding=utf-8
 # Copyright Google AI and The HuggingFace Inc. team. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,22 +14,22 @@
 # limitations under the License.
 """CANINE model configuration"""
 
-from ...configuration_utils import PreTrainedConfig
+from ...configuration_utils import PretrainedConfig
 from ...utils import logging
 
 
 logger = logging.get_logger(__name__)
 
 
-class CanineConfig(PreTrainedConfig):
+class CanineConfig(PretrainedConfig):
     r"""
     This is the configuration class to store the configuration of a [`CanineModel`]. It is used to instantiate an
     CANINE model according to the specified arguments, defining the model architecture. Instantiating a configuration
     with the defaults will yield a similar configuration to that of the CANINE
     [google/canine-s](https://huggingface.co/google/canine-s) architecture.
 
-    Configuration objects inherit from [`PreTrainedConfig`] and can be used to control the model outputs. Read the
-    documentation from [`PreTrainedConfig`] for more information.
+    Configuration objects inherit from [`PretrainedConfig`] and can be used to control the model outputs. Read the
+    documentation from [`PretrainedConfig`] for more information.
 
 
     Args:
@@ -115,11 +116,8 @@ class CanineConfig(PreTrainedConfig):
         local_transformer_stride=128,  # Good TPU/XLA memory alignment.
         **kwargs,
     ):
-        super().__init__(**kwargs)
+        super().__init__(pad_token_id=pad_token_id, bos_token_id=bos_token_id, eos_token_id=eos_token_id, **kwargs)
 
-        self.pad_token_id = pad_token_id
-        self.bos_token_id = bos_token_id
-        self.eos_token_id = eos_token_id
         self.max_position_embeddings = max_position_embeddings
         self.hidden_size = hidden_size
         self.num_hidden_layers = num_hidden_layers

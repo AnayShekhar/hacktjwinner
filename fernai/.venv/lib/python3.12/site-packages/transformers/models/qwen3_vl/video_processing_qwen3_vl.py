@@ -1,3 +1,4 @@
+# coding=utf-8
 # Copyright 2025 The Qwen Team and The HuggingFace Inc. team. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,6 +15,7 @@
 """video processor class for Qwen3-VL."""
 
 import math
+from typing import Optional, Union
 
 import numpy as np
 import torch
@@ -38,6 +40,8 @@ def smart_resize(
     min_pixels: int = 128 * 128,
     max_pixels: int = 16 * 16 * 2 * 2 * 2 * 6144,
 ):
+    if num_frames < temporal_factor:
+        raise ValueError(f"t:{num_frames} must be larger than temporal_factor:{temporal_factor}")
     if height < factor or width < factor:
         raise ValueError(f"height:{height} or width:{width} must be larger than factor:{factor}")
     elif max(height, width) / min(height, width) > 200:
@@ -46,7 +50,7 @@ def smart_resize(
         )
     h_bar = round(height / factor) * factor
     w_bar = round(width / factor) * factor
-    t_bar = math.ceil(num_frames / temporal_factor) * temporal_factor
+    t_bar = round(num_frames / temporal_factor) * temporal_factor
 
     if t_bar * h_bar * w_bar > max_pixels:
         beta = math.sqrt((num_frames * height * width) / max_pixels)
@@ -60,12 +64,12 @@ def smart_resize(
     return h_bar, w_bar
 
 
-class Qwen3VLVideoProcessorInitKwargs(VideosKwargs, total=False):
-    patch_size: int
-    temporal_patch_size: int
-    merge_size: int
-    min_frames: int
-    max_frames: int
+class Qwen3VLVideoProcessorInitKwargs(VideosKwargs):
+    patch_size: Optional[int]
+    temporal_patch_size: Optional[int]
+    merge_size: Optional[int]
+    min_frames: Optional[int]
+    max_frames: Optional[int]
 
 
 @add_start_docstrings(
@@ -108,7 +112,7 @@ class Qwen3VLVideoProcessor(BaseVideoProcessor):
 
     def _further_process_kwargs(
         self,
-        size: SizeDict | None = None,
+        size: Optional[SizeDict] = None,
         **kwargs,
     ) -> dict:
         """
@@ -123,8 +127,8 @@ class Qwen3VLVideoProcessor(BaseVideoProcessor):
     def sample_frames(
         self,
         metadata: VideoMetadata,
-        num_frames: int | None = None,
-        fps: int | float | None = None,
+        num_frames: Optional[int] = None,
+        fps: Optional[Union[int, float]] = None,
         **kwargs,
     ):
         """
@@ -160,7 +164,7 @@ class Qwen3VLVideoProcessor(BaseVideoProcessor):
                     "Defaulting to `fps=24`. Please provide `video_metadata` for more accurate results."
                 )
             num_frames = int(total_num_frames / metadata.fps * fps)
-            num_frames = min(max(num_frames, self.min_frames), self.max_frames, total_num_frames)
+            num_frames = min(min(max(num_frames, self.min_frames), self.max_frames), total_num_frames)
 
         if num_frames is None:
             num_frames = min(max(total_num_frames, self.min_frames), self.max_frames)
@@ -174,17 +178,17 @@ class Qwen3VLVideoProcessor(BaseVideoProcessor):
         videos: list[torch.Tensor],
         do_convert_rgb: bool = True,
         do_resize: bool = True,
-        size: SizeDict | None = None,
+        size: Optional[SizeDict] = None,
         interpolation: PILImageResampling = PILImageResampling.BICUBIC,
         do_rescale: bool = True,
         rescale_factor: float = 1 / 255.0,
         do_normalize: bool = True,
-        image_mean: float | list[float] | None = None,
-        image_std: float | list[float] | None = None,
-        patch_size: int | None = None,
-        temporal_patch_size: int | None = None,
-        merge_size: int | None = None,
-        return_tensors: str | TensorType | None = None,
+        image_mean: Optional[Union[float, list[float]]] = None,
+        image_std: Optional[Union[float, list[float]]] = None,
+        patch_size: Optional[int] = None,
+        temporal_patch_size: Optional[int] = None,
+        merge_size: Optional[int] = None,
+        return_tensors: Optional[Union[str, TensorType]] = None,
         **kwargs,
     ):
         grouped_videos, grouped_videos_index = group_videos_by_shape(videos)
@@ -228,10 +232,9 @@ class Qwen3VLVideoProcessor(BaseVideoProcessor):
             patches = stacked_videos
 
             # Check that videos have `num_frames` divisible by `temporal_patch_size`
-            T = patches.shape[1]
-            if pad := -T % temporal_patch_size:
-                repeats = patches[:, -1:].expand(-1, pad, -1, -1, -1)
-                patches = torch.cat((patches, repeats), dim=1)
+            if patches.shape[1] % temporal_patch_size != 0:
+                repeats = patches[:, -1:].repeat(1, temporal_patch_size - 1, 1, 1, 1)
+                patches = torch.cat([patches, repeats], dim=1)
             batch_size, grid_t, channel = patches.shape[:3]
             grid_t = grid_t // temporal_patch_size
             grid_h, grid_w = resized_height // patch_size, resized_width // patch_size

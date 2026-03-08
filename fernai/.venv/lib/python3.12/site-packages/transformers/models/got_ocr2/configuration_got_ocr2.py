@@ -4,6 +4,7 @@
 #             the file from the modular. If any change should be done, please apply the change to the
 #                          modular_got_ocr2.py file directly. One of our CI enforces this.
 #                🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨
+# coding=utf-8
 # Copyright 2024 HuggingFace Inc. team. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,19 +19,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from ...configuration_utils import PreTrainedConfig
+
+from ...configuration_utils import PretrainedConfig
 from ..auto import CONFIG_MAPPING, AutoConfig
 
 
-class GotOcr2VisionConfig(PreTrainedConfig):
+class GotOcr2VisionConfig(PretrainedConfig):
     r"""
     This is the configuration class to store the configuration of a [`GotOcr2VisionModel`]. It is used to instantiate a GOT_OCR2
     vision encoder according to the specified arguments, defining the model architecture. Instantiating a configuration
     defaults will yield a similar configuration to that of the SAM ViT-h
     [facebook/sam-vit-huge](https://huggingface.co/facebook/sam-vit-huge) architecture.
 
-    Configuration objects inherit from [`PreTrainedConfig`] and can be used to control the model outputs. Read the
-    documentation from [`PreTrainedConfig`] for more information.
+    Configuration objects inherit from [`PretrainedConfig`] and can be used to control the model outputs. Read the
+    documentation from [`PretrainedConfig`] for more information.
 
     Args:
         hidden_size (`int`, *optional*, defaults to 768):
@@ -113,7 +115,7 @@ class GotOcr2VisionConfig(PreTrainedConfig):
         self.mlp_dim = mlp_dim
 
 
-class GotOcr2Config(PreTrainedConfig):
+class GotOcr2Config(PretrainedConfig):
     r"""
     This is the configuration class to store the configuration of a [`GotOcr2ForConditionalGeneration`]. It is used to instantiate a
     GotOcr2 model according to the specified arguments, defining the model architecture. Instantiating a configuration
@@ -121,8 +123,8 @@ class GotOcr2Config(PreTrainedConfig):
 
     e.g [stepfun-ai/GOT-OCR-2.0-hf](https://huggingface.co/stepfun-ai/GOT-OCR-2.0-hf)
 
-    Configuration objects inherit from [`PreTrainedConfig`] and can be used to control the model outputs. Read the
-    documentation from [`PreTrainedConfig`] for more information.
+    Configuration objects inherit from [`PretrainedConfig`] and can be used to control the model outputs. Read the
+    documentation from [`PretrainedConfig`] for more information.
 
 
     Args:
@@ -134,9 +136,8 @@ class GotOcr2Config(PreTrainedConfig):
             The image token index to encode the image prompt.
         image_seq_length (`int`, *optional*, defaults to 576):
             Sequence length of one image embedding.
-        tie_word_embeddings (`bool`, *optional*, defaults to `True`):
-            Whether to tie weight embeddings
-
+        pad_token_id (`int`, *optional*, defaults to -1):
+            Padding token id.
 
     ```python
     >>> from transformers import GotOcr2ForConditionalGeneration, GotOcr2Config
@@ -159,15 +160,16 @@ class GotOcr2Config(PreTrainedConfig):
 
     def __init__(
         self,
-        vision_config: dict | None = None,
-        text_config: dict | None = None,
-        image_token_index: int | None = 151859,
-        image_seq_length: int | None = 576,
-        tie_word_embeddings: bool | None = True,
+        vision_config=None,
+        text_config=None,
+        image_token_index=151859,
+        image_seq_length=576,
+        pad_token_id=-1,
         **kwargs,
     ):
         self.image_token_index = image_token_index
         self.image_seq_length = image_seq_length
+        self.pad_token_id = pad_token_id
 
         if vision_config is None:
             self.vision_config = GotOcr2VisionConfig()
@@ -192,9 +194,9 @@ class GotOcr2Config(PreTrainedConfig):
                 initializer_range=0.02,
                 rms_norm_eps=1e-6,
                 use_cache=True,
-                tie_word_embeddings=tie_word_embeddings,
+                tie_word_embeddings=True,
                 rope_theta=1000000.0,
-                rope_parameters=None,
+                rope_scaling=None,
                 use_sliding_window=False,
                 sliding_window=4096,
                 max_window_layers=21,
@@ -202,7 +204,6 @@ class GotOcr2Config(PreTrainedConfig):
             )
 
         self.text_config = text_config
-        self.tie_word_embeddings = tie_word_embeddings
 
         super().__init__(**kwargs)
 

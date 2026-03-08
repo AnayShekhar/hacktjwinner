@@ -1,3 +1,4 @@
+# coding=utf-8
 # Copyright 2018 DPR Authors, The Hugging Face Team.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,6 +15,7 @@
 """PyTorch DPR model for Open Domain Question Answering."""
 
 from dataclasses import dataclass
+from typing import Optional, Union
 
 import torch
 from torch import Tensor, nn
@@ -52,8 +54,8 @@ class DPRContextEncoderOutput(ModelOutput):
     """
 
     pooler_output: torch.FloatTensor
-    hidden_states: tuple[torch.FloatTensor, ...] | None = None
-    attentions: tuple[torch.FloatTensor, ...] | None = None
+    hidden_states: Optional[tuple[torch.FloatTensor, ...]] = None
+    attentions: Optional[tuple[torch.FloatTensor, ...]] = None
 
 
 @dataclass
@@ -71,8 +73,8 @@ class DPRQuestionEncoderOutput(ModelOutput):
     """
 
     pooler_output: torch.FloatTensor
-    hidden_states: tuple[torch.FloatTensor, ...] | None = None
-    attentions: tuple[torch.FloatTensor, ...] | None = None
+    hidden_states: Optional[tuple[torch.FloatTensor, ...]] = None
+    attentions: Optional[tuple[torch.FloatTensor, ...]] = None
 
 
 @dataclass
@@ -93,15 +95,31 @@ class DPRReaderOutput(ModelOutput):
     """
 
     start_logits: torch.FloatTensor
-    end_logits: torch.FloatTensor | None = None
-    relevance_logits: torch.FloatTensor | None = None
-    hidden_states: tuple[torch.FloatTensor, ...] | None = None
-    attentions: tuple[torch.FloatTensor, ...] | None = None
+    end_logits: Optional[torch.FloatTensor] = None
+    relevance_logits: Optional[torch.FloatTensor] = None
+    hidden_states: Optional[tuple[torch.FloatTensor, ...]] = None
+    attentions: Optional[tuple[torch.FloatTensor, ...]] = None
 
 
 @auto_docstring
 class DPRPreTrainedModel(PreTrainedModel):
     _supports_sdpa = True
+
+    def _init_weights(self, module):
+        """Initialize the weights"""
+        if isinstance(module, nn.Linear):
+            # Slightly different from the TF version which uses truncated_normal for initialization
+            # cf https://github.com/pytorch/pytorch/pull/5617
+            module.weight.data.normal_(mean=0.0, std=self.config.initializer_range)
+            if module.bias is not None:
+                module.bias.data.zero_()
+        elif isinstance(module, nn.Embedding):
+            module.weight.data.normal_(mean=0.0, std=self.config.initializer_range)
+            if module.padding_idx is not None:
+                module.weight.data[module.padding_idx].zero_()
+        elif isinstance(module, nn.LayerNorm):
+            module.bias.data.zero_()
+            module.weight.data.fill_(1.0)
 
 
 class DPREncoder(DPRPreTrainedModel):
@@ -121,14 +139,13 @@ class DPREncoder(DPRPreTrainedModel):
     def forward(
         self,
         input_ids: Tensor,
-        attention_mask: Tensor | None = None,
-        token_type_ids: Tensor | None = None,
-        inputs_embeds: Tensor | None = None,
+        attention_mask: Optional[Tensor] = None,
+        token_type_ids: Optional[Tensor] = None,
+        inputs_embeds: Optional[Tensor] = None,
         output_attentions: bool = False,
         output_hidden_states: bool = False,
         return_dict: bool = False,
-        **kwargs,
-    ) -> BaseModelOutputWithPooling | tuple[Tensor, ...]:
+    ) -> Union[BaseModelOutputWithPooling, tuple[Tensor, ...]]:
         outputs = self.bert_model(
             input_ids=input_ids,
             attention_mask=attention_mask,
@@ -176,12 +193,11 @@ class DPRSpanPredictor(DPRPreTrainedModel):
         self,
         input_ids: Tensor,
         attention_mask: Tensor,
-        inputs_embeds: Tensor | None = None,
+        inputs_embeds: Optional[Tensor] = None,
         output_attentions: bool = False,
         output_hidden_states: bool = False,
         return_dict: bool = False,
-        **kwargs,
-    ) -> DPRReaderOutput | tuple[Tensor, ...]:
+    ) -> Union[DPRReaderOutput, tuple[Tensor, ...]]:
         # notations: N - number of questions in a batch, M - number of passages per questions, L - sequence length
         n_passages, sequence_length = input_ids.size() if input_ids is not None else inputs_embeds.size()[:2]
         # feed encoder
@@ -231,6 +247,7 @@ class DPRPretrainedContextEncoder(DPRPreTrainedModel):
     """
 
     config: DPRConfig
+    load_tf_weights = None
     base_model_prefix = "ctx_encoder"
 
 
@@ -241,6 +258,7 @@ class DPRPretrainedQuestionEncoder(DPRPreTrainedModel):
     """
 
     config: DPRConfig
+    load_tf_weights = None
     base_model_prefix = "question_encoder"
 
 
@@ -251,6 +269,7 @@ class DPRPretrainedReader(DPRPreTrainedModel):
     """
 
     config: DPRConfig
+    load_tf_weights = None
     base_model_prefix = "span_predictor"
 
 
@@ -275,15 +294,14 @@ class DPRContextEncoder(DPRPretrainedContextEncoder):
     @auto_docstring
     def forward(
         self,
-        input_ids: Tensor | None = None,
-        attention_mask: Tensor | None = None,
-        token_type_ids: Tensor | None = None,
-        inputs_embeds: Tensor | None = None,
-        output_attentions: bool | None = None,
-        output_hidden_states: bool | None = None,
-        return_dict: bool | None = None,
-        **kwargs,
-    ) -> DPRContextEncoderOutput | tuple[Tensor, ...]:
+        input_ids: Optional[Tensor] = None,
+        attention_mask: Optional[Tensor] = None,
+        token_type_ids: Optional[Tensor] = None,
+        inputs_embeds: Optional[Tensor] = None,
+        output_attentions: Optional[bool] = None,
+        output_hidden_states: Optional[bool] = None,
+        return_dict: Optional[bool] = None,
+    ) -> Union[DPRContextEncoderOutput, tuple[Tensor, ...]]:
         r"""
         input_ids (`torch.LongTensor` of shape `(batch_size, sequence_length)`):
             Indices of input sequence tokens in the vocabulary. To match pretraining, DPR input sequence should be
@@ -381,15 +399,14 @@ class DPRQuestionEncoder(DPRPretrainedQuestionEncoder):
     @auto_docstring
     def forward(
         self,
-        input_ids: Tensor | None = None,
-        attention_mask: Tensor | None = None,
-        token_type_ids: Tensor | None = None,
-        inputs_embeds: Tensor | None = None,
-        output_attentions: bool | None = None,
-        output_hidden_states: bool | None = None,
-        return_dict: bool | None = None,
-        **kwargs,
-    ) -> DPRQuestionEncoderOutput | tuple[Tensor, ...]:
+        input_ids: Optional[Tensor] = None,
+        attention_mask: Optional[Tensor] = None,
+        token_type_ids: Optional[Tensor] = None,
+        inputs_embeds: Optional[Tensor] = None,
+        output_attentions: Optional[bool] = None,
+        output_hidden_states: Optional[bool] = None,
+        return_dict: Optional[bool] = None,
+    ) -> Union[DPRQuestionEncoderOutput, tuple[Tensor, ...]]:
         r"""
         input_ids (`torch.LongTensor` of shape `(batch_size, sequence_length)`):
             Indices of input sequence tokens in the vocabulary. To match pretraining, DPR input sequence should be
@@ -488,14 +505,13 @@ class DPRReader(DPRPretrainedReader):
     @auto_docstring
     def forward(
         self,
-        input_ids: Tensor | None = None,
-        attention_mask: Tensor | None = None,
-        inputs_embeds: Tensor | None = None,
-        output_attentions: bool | None = None,
-        output_hidden_states: bool | None = None,
-        return_dict: bool | None = None,
-        **kwargs,
-    ) -> DPRReaderOutput | tuple[Tensor, ...]:
+        input_ids: Optional[Tensor] = None,
+        attention_mask: Optional[Tensor] = None,
+        inputs_embeds: Optional[Tensor] = None,
+        output_attentions: Optional[bool] = None,
+        output_hidden_states: Optional[bool] = None,
+        return_dict: Optional[bool] = None,
+    ) -> Union[DPRReaderOutput, tuple[Tensor, ...]]:
         r"""
         input_ids (`tuple[torch.LongTensor]` of shapes `(n_passages, sequence_length)`):
             Indices of input sequence tokens in the vocabulary. It has to be a sequence triplet with 1) the question

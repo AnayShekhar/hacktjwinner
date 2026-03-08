@@ -14,6 +14,7 @@
 import inspect
 import warnings
 from functools import wraps
+from typing import Optional
 
 import packaging.version
 
@@ -36,11 +37,11 @@ class Action(ExplicitEnum):
 def deprecate_kwarg(
     old_name: str,
     version: str,
-    new_name: str | None = None,
+    new_name: Optional[str] = None,
     warn_if_greater_or_equal_version: bool = False,
     raise_if_greater_or_equal_version: bool = False,
     raise_if_both_names: bool = False,
-    additional_message: str | None = None,
+    additional_message: Optional[str] = None,
 ):
     """
     Function or method decorator to notify users about deprecated keyword arguments, replacing them with a new name if specified.

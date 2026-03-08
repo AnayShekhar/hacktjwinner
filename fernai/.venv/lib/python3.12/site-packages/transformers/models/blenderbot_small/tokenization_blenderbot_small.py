@@ -1,3 +1,4 @@
+# coding=utf-8
 # Copyright 2021 The Facebook Inc. and The HuggingFace Inc. team. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,10 +16,11 @@
 
 import json
 import os
+from typing import Optional
 
 import regex as re
 
-from ...tokenization_python import PreTrainedTokenizer
+from ...tokenization_utils import PreTrainedTokenizer
 from ...utils import logging
 
 
@@ -94,9 +96,7 @@ class BlenderbotSmallTokenizer(PreTrainedTokenizer):
         merges = [tuple(merge.split()) for merge in merges]
         self.bpe_ranks = dict(zip(merges, range(len(merges))))
         self.cache = {}
-
         super().__init__(unk_token=unk_token, bos_token=bos_token, eos_token=eos_token, pad_token=pad_token, **kwargs)
-        self.special_tokens_pattern = None
 
     @property
     def vocab_size(self) -> int:
@@ -189,7 +189,7 @@ class BlenderbotSmallTokenizer(PreTrainedTokenizer):
         out_string = " ".join(tokens).replace("@@ ", "").strip()
         return out_string
 
-    def save_vocabulary(self, save_directory: str, filename_prefix: str | None = None) -> tuple[str]:
+    def save_vocabulary(self, save_directory: str, filename_prefix: Optional[str] = None) -> tuple[str]:
         if not os.path.isdir(save_directory):
             logger.error(f"Vocabulary path ({save_directory}) should be a directory")
             return

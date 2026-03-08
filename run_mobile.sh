@@ -9,6 +9,7 @@ MOBILE="$ROOT/fernai/fernai-mobile"
 if [ -s "$HOME/.nvm/nvm.sh" ]; then
   . "$HOME/.nvm/nvm.sh"
 fi
+
 if ! command -v npm &>/dev/null; then
   echo "npm not found. Install Node (e.g. nvm install --lts) and try again."
   exit 1

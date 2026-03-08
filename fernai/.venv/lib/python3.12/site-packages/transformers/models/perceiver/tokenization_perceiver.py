@@ -1,3 +1,4 @@
+# coding=utf-8
 # Copyright 2021 The HuggingFace Inc. team.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,7 +14,9 @@
 # limitations under the License.
 """Tokenization class for Perceiver."""
 
-from ...tokenization_python import AddedToken, PreTrainedTokenizer
+from typing import Optional
+
+from ...tokenization_utils import AddedToken, PreTrainedTokenizer
 from ...utils import logging
 
 
@@ -107,7 +110,7 @@ class PerceiverTokenizer(PreTrainedTokenizer):
         return self._utf_vocab_size
 
     def get_special_tokens_mask(
-        self, token_ids_0: list[int], token_ids_1: list[int] | None = None, already_has_special_tokens: bool = False
+        self, token_ids_0: list[int], token_ids_1: Optional[list[int]] = None, already_has_special_tokens: bool = False
     ) -> list[int]:
         """
         Retrieve sequence ids from a token list that has no special tokens added. This method is called when adding
@@ -135,7 +138,7 @@ class PerceiverTokenizer(PreTrainedTokenizer):
         return [1] + ([0] * len(token_ids_0)) + [1] + ([0] * len(token_ids_1)) + [1]
 
     def build_inputs_with_special_tokens(
-        self, token_ids_0: list[int], token_ids_1: list[int] | None = None
+        self, token_ids_0: list[int], token_ids_1: Optional[list[int]] = None
     ) -> list[int]:
         """
         Build model inputs from a sequence or a pair of sequence for sequence classification tasks. A sequence has the
@@ -190,7 +193,7 @@ class PerceiverTokenizer(PreTrainedTokenizer):
         return string
 
     # PerceiverTokenizer has no vocab file
-    def save_vocabulary(self, save_directory: str, filename_prefix: str | None = None) -> tuple[str]:
+    def save_vocabulary(self, save_directory: str, filename_prefix: Optional[str] = None) -> tuple[str]:
         return ()
 
 

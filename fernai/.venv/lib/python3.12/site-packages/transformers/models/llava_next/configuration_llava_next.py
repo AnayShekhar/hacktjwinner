@@ -1,3 +1,4 @@
+# coding=utf-8
 # Copyright 2024 The HuggingFace Inc. team. All rights reserved.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,7 +13,7 @@
 # limitations under the License.
 """Llava-NeXT model configuration"""
 
-from ...configuration_utils import PreTrainedConfig
+from ...configuration_utils import PretrainedConfig
 from ...utils import logging
 from ..auto import CONFIG_MAPPING, AutoConfig
 
@@ -20,15 +21,15 @@ from ..auto import CONFIG_MAPPING, AutoConfig
 logger = logging.get_logger(__name__)
 
 
-class LlavaNextConfig(PreTrainedConfig):
+class LlavaNextConfig(PretrainedConfig):
     r"""
     This is the configuration class to store the configuration of a [`LlavaNextForConditionalGeneration`]. It is used to instantiate an
     Llava-NeXT model according to the specified arguments, defining the model architecture. Instantiating a configuration
     with the defaults will yield a similar configuration to that of the [llava-hf/llava-v1.6-mistral-7b-hf](https://huggingface.co/llava-hf/llava-v1.6-mistral-7b-hf)
     model.
 
-    Configuration objects inherit from [`PreTrainedConfig`] and can be used to control the model outputs. Read the
-    documentation from [`PreTrainedConfig`] for more information.
+    Configuration objects inherit from [`PretrainedConfig`] and can be used to control the model outputs. Read the
+    documentation from [`PretrainedConfig`] for more information.
 
     Args:
         vision_config (`Union[AutoConfig, dict]`,  *optional*, defaults to `CLIPVisionConfig`):
@@ -143,8 +144,7 @@ class LlavaNextConfig(PreTrainedConfig):
 
         self.text_config = text_config
 
-        self.tie_word_embeddings = tie_word_embeddings
-        super().__init__(**kwargs)
+        super().__init__(tie_word_embeddings=tie_word_embeddings, **kwargs)
 
 
 __all__ = ["LlavaNextConfig"]

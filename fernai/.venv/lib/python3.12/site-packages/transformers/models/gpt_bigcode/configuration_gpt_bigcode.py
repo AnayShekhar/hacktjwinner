@@ -1,3 +1,4 @@
+# coding=utf-8
 # Copyright 2023 The BigCode team and HuggingFace Inc. team.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,22 +14,22 @@
 # limitations under the License.
 """GPTBigCode configuration"""
 
-from ...configuration_utils import PreTrainedConfig
+from ...configuration_utils import PretrainedConfig
 from ...utils import logging
 
 
 logger = logging.get_logger(__name__)
 
 
-class GPTBigCodeConfig(PreTrainedConfig):
+class GPTBigCodeConfig(PretrainedConfig):
     """
     This is the configuration class to store the configuration of a [`GPTBigCodeModel`]. It is used to instantiate a
     GPTBigCode model according to the specified arguments, defining the model architecture. Instantiating a
     configuration with the defaults will yield a similar configuration to that of the GPTBigCode
     [gpt_bigcode](https://huggingface.co/gpt_bigcode) architecture.
 
-    Configuration objects inherit from [`PreTrainedConfig`] and can be used to control the model outputs. Read the
-    documentation from [`PreTrainedConfig`] for more information.
+    Configuration objects inherit from [`PretrainedConfig`] and can be used to control the model outputs. Read the
+    documentation from [`PretrainedConfig`] for more information.
 
 
     Args:
@@ -111,16 +112,11 @@ class GPTBigCodeConfig(PreTrainedConfig):
         use_cache=True,
         bos_token_id=50256,
         eos_token_id=50256,
-        pad_token_id=None,
         attention_softmax_in_fp32=True,
         scale_attention_softmax_in_fp32=True,
         multi_query=True,
-        add_cross_attention=False,
-        tie_word_embeddings=True,
         **kwargs,
     ):
-        self.add_cross_attention = add_cross_attention
-        self.tie_word_embeddings = tie_word_embeddings
         self.vocab_size = vocab_size
         self.n_positions = n_positions
         self.n_embd = n_embd
@@ -142,9 +138,8 @@ class GPTBigCodeConfig(PreTrainedConfig):
 
         self.bos_token_id = bos_token_id
         self.eos_token_id = eos_token_id
-        self.pad_token_id = pad_token_id
 
-        super().__init__(**kwargs)
+        super().__init__(bos_token_id=bos_token_id, eos_token_id=eos_token_id, **kwargs)
 
 
 __all__ = ["GPTBigCodeConfig"]

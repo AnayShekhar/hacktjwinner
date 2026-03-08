@@ -4,6 +4,7 @@
 #             the file from the modular. If any change should be done, please apply the change to the
 #                          modular_edgetam_video.py file directly. One of our CI enforces this.
 #                🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨
+# coding=utf-8
 # Copyright 2025 the HuggingFace Team. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,17 +19,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from ...configuration_utils import PreTrainedConfig
+from ...configuration_utils import PretrainedConfig
 from ..auto import CONFIG_MAPPING, AutoConfig
 
 
-class EdgeTamVideoPromptEncoderConfig(PreTrainedConfig):
+class EdgeTamVideoPromptEncoderConfig(PretrainedConfig):
     r"""
     This is the configuration class to store the configuration of a [`EdgeTamVideoPromptEncoder`]. The [`EdgeTamVideoPromptEncoder`]
     module is used to encode the input 2D points and bounding boxes.
 
-    Configuration objects inherit from [`PreTrainedConfig`] and can be used to control the model outputs. Read the
-    documentation from [`PreTrainedConfig`] for more information.
+    Configuration objects inherit from [`PretrainedConfig`] and can be used to control the model outputs. Read the
+    documentation from [`PretrainedConfig`] for more information.
 
     Args:
         hidden_size (`int`, *optional*, defaults to 256):
@@ -74,13 +75,13 @@ class EdgeTamVideoPromptEncoderConfig(PreTrainedConfig):
         self.scale = scale
 
 
-class EdgeTamVideoMaskDecoderConfig(PreTrainedConfig):
+class EdgeTamVideoMaskDecoderConfig(PretrainedConfig):
     r"""
     This is the configuration class to store the configuration of a [`EdgeTamVideoMaskDecoder`]. It is used to instantiate a EDGETAM_VIDEO
     memory encoder according to the specified arguments, defining the model architecture.
 
-    Configuration objects inherit from [`PreTrainedConfig`] and can be used to control the model outputs. Read the
-    documentation from [`PreTrainedConfig`] for more information.
+    Configuration objects inherit from [`PretrainedConfig`] and can be used to control the model outputs. Read the
+    documentation from [`PretrainedConfig`] for more information.
 
     Args:
         hidden_size (`int`, *optional*, defaults to 256):
@@ -147,15 +148,15 @@ class EdgeTamVideoMaskDecoderConfig(PreTrainedConfig):
         self.attention_downsample_rate = attention_downsample_rate
 
 
-class EdgeTamVideoConfig(PreTrainedConfig):
+class EdgeTamVideoConfig(PretrainedConfig):
     r"""
     [`EdgeTamVideoConfig`] is the configuration class to store the configuration of a [`EdgeTamVideoModel`]. It is used to instantiate a
     EDGETAM model according to the specified arguments, defining the memory attention, memory encoder, and image encoder
     configs. Instantiating a configuration defaults will yield a similar configuration to that of the SAM 2.1 Hiera-tiny
     [facebook/EdgeTAM](https://huggingface.co/facebook/EdgeTAM) architecture.
 
-    Configuration objects inherit from [`PreTrainedConfig`] and can be used to control the model outputs. Read the
-    documentation from [`PreTrainedConfig`] for more information.
+    Configuration objects inherit from [`PretrainedConfig`] and can be used to control the model outputs. Read the
+    documentation from [`PretrainedConfig`] for more information.
 
     Args:
         vision_config (Union[`dict`, `EdgeTamVideoVisionConfig`], *optional*):
@@ -186,8 +187,6 @@ class EdgeTamVideoConfig(PreTrainedConfig):
             Whether to use multimask output for tracking.
         max_object_pointers_in_encoder (`int`, *optional*, defaults to 16):
             The maximum number of object pointers in the encoder.
-        max_cond_frame_num (`int`, *optional*, defaults to -1):
-            Maximum number of conditioning frames to use in memory attention. Set to -1 to use all conditioning frames.
         enable_temporal_pos_encoding_for_object_pointers (`bool`, *optional*, defaults to `True`):
             Whether to enable temporal positional encoding for object pointers.
         memory_attention_hidden_size (`int`, *optional*, defaults to 256):
@@ -314,7 +313,6 @@ class EdgeTamVideoConfig(PreTrainedConfig):
         multimask_max_pt_num=1,
         multimask_output_for_tracking=True,
         max_object_pointers_in_encoder=16,
-        max_cond_frame_num=-1,
         enable_temporal_pos_encoding_for_object_pointers=True,
         # memory attention
         memory_attention_hidden_size=256,
@@ -390,7 +388,6 @@ class EdgeTamVideoConfig(PreTrainedConfig):
         self.multimask_max_pt_num = multimask_max_pt_num
         self.multimask_output_for_tracking = multimask_output_for_tracking
         self.max_object_pointers_in_encoder = max_object_pointers_in_encoder
-        self.max_cond_frame_num = max_cond_frame_num
         self.enable_temporal_pos_encoding_for_object_pointers = enable_temporal_pos_encoding_for_object_pointers
 
         # memory attention

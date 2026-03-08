@@ -1,3 +1,4 @@
+# coding=utf-8
 # Copyright 2023 The HuggingFace Inc. team. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,14 +14,14 @@
 # limitations under the License.
 """ALIGN model configuration"""
 
-from ...configuration_utils import PreTrainedConfig
+from ...configuration_utils import PretrainedConfig
 from ...utils import logging
 
 
 logger = logging.get_logger(__name__)
 
 
-class AlignTextConfig(PreTrainedConfig):
+class AlignTextConfig(PretrainedConfig):
     r"""
     This is the configuration class to store the configuration of a [`AlignTextModel`]. It is used to instantiate a
     ALIGN text encoder according to the specified arguments, defining the model architecture. Instantiating a
@@ -28,8 +29,8 @@ class AlignTextConfig(PreTrainedConfig):
     [kakaobrain/align-base](https://huggingface.co/kakaobrain/align-base) architecture. The default values here are
     copied from BERT.
 
-    Configuration objects inherit from [`PreTrainedConfig`] and can be used to control the model outputs. Read the
-    documentation from [`PreTrainedConfig`] for more information.
+    Configuration objects inherit from [`PretrainedConfig`] and can be used to control the model outputs. Read the
+    documentation from [`PretrainedConfig`] for more information.
 
     Args:
         vocab_size (`int`, *optional*, defaults to 30522):
@@ -61,10 +62,15 @@ class AlignTextConfig(PreTrainedConfig):
             The epsilon used by the layer normalization layers.
         pad_token_id (`int`, *optional*, defaults to 0):
             Padding token id.
-        bos_token_id (`int`, *optional*):
-            Beginning of stream token id.
-        eos_token_id (`int`, *optional*):
-            End of stream token id.
+        position_embedding_type (`str`, *optional*, defaults to `"absolute"`):
+            Type of position embedding. Choose one of `"absolute"`, `"relative_key"`, `"relative_key_query"`. For
+            positional embeddings use `"absolute"`. For more information on `"relative_key"`, please refer to
+            [Self-Attention with Relative Position Representations (Shaw et al.)](https://huggingface.co/papers/1803.02155).
+            For more information on `"relative_key_query"`, please refer to *Method 4* in [Improve Transformer Models
+            with Better Relative Position Embeddings (Huang et al.)](https://huggingface.co/papers/2009.13658).
+        use_cache (`bool`, *optional*, defaults to `True`):
+            Whether or not the model should return the last key/values attentions (not used by all models). Only
+            relevant if `config.is_decoder=True`.
 
     Example:
 
@@ -99,8 +105,8 @@ class AlignTextConfig(PreTrainedConfig):
         initializer_range=0.02,
         layer_norm_eps=1e-12,
         pad_token_id=0,
-        bos_token_id=None,
-        eos_token_id=None,
+        position_embedding_type="absolute",
+        use_cache=True,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -117,12 +123,12 @@ class AlignTextConfig(PreTrainedConfig):
         self.type_vocab_size = type_vocab_size
         self.initializer_range = initializer_range
         self.layer_norm_eps = layer_norm_eps
+        self.position_embedding_type = position_embedding_type
+        self.use_cache = use_cache
         self.pad_token_id = pad_token_id
-        self.bos_token_id = bos_token_id
-        self.eos_token_id = eos_token_id
 
 
-class AlignVisionConfig(PreTrainedConfig):
+class AlignVisionConfig(PretrainedConfig):
     r"""
     This is the configuration class to store the configuration of a [`AlignVisionModel`]. It is used to instantiate a
     ALIGN vision encoder according to the specified arguments, defining the model architecture. Instantiating a
@@ -130,8 +136,8 @@ class AlignVisionConfig(PreTrainedConfig):
     [kakaobrain/align-base](https://huggingface.co/kakaobrain/align-base) architecture. The default values are copied
     from EfficientNet (efficientnet-b7)
 
-    Configuration objects inherit from [`PreTrainedConfig`] and can be used to control the model outputs. Read the
-    documentation from [`PreTrainedConfig`] for more information.
+    Configuration objects inherit from [`PretrainedConfig`] and can be used to control the model outputs. Read the
+    documentation from [`PretrainedConfig`] for more information.
 
     Args:
         num_channels (`int`, *optional*, defaults to 3):
@@ -244,15 +250,15 @@ class AlignVisionConfig(PreTrainedConfig):
         self.num_hidden_layers = sum(num_block_repeats) * 4
 
 
-class AlignConfig(PreTrainedConfig):
+class AlignConfig(PretrainedConfig):
     r"""
     [`AlignConfig`] is the configuration class to store the configuration of a [`AlignModel`]. It is used to
     instantiate a ALIGN model according to the specified arguments, defining the text model and vision model configs.
     Instantiating a configuration with the defaults will yield a similar configuration to that of the ALIGN
     [kakaobrain/align-base](https://huggingface.co/kakaobrain/align-base) architecture.
 
-    Configuration objects inherit from [`PreTrainedConfig`] and can be used to control the model outputs. Read the
-    documentation from [`PreTrainedConfig`] for more information.
+    Configuration objects inherit from [`PretrainedConfig`] and can be used to control the model outputs. Read the
+    documentation from [`PretrainedConfig`] for more information.
 
     Args:
         text_config (`dict`, *optional*):
@@ -289,7 +295,7 @@ class AlignConfig(PreTrainedConfig):
     >>> config_text = AlignTextConfig()
     >>> config_vision = AlignVisionConfig()
 
-    >>> config = AlignConfig(text_config=config_text, vision_config=config_vision)
+    >>> config = AlignConfig.from_text_vision_configs(config_text, config_vision)
     ```"""
 
     model_type = "align"
@@ -304,25 +310,22 @@ class AlignConfig(PreTrainedConfig):
         initializer_range=0.02,
         **kwargs,
     ):
+        super().__init__(**kwargs)
+
         if text_config is None:
-            text_config = AlignTextConfig()
-            logger.info("`text_config` is `None`. Initializing the `AlignTextConfig` with default values.")
-        elif isinstance(text_config, dict):
-            text_config = AlignTextConfig(**text_config)
+            text_config = {}
+            logger.info("text_config is None. Initializing the AlignTextConfig with default values.")
 
         if vision_config is None:
-            vision_config = AlignVisionConfig()
-            logger.info("`vision_config` is `None`. initializing the `AlignVisionConfig` with default values.")
-        elif isinstance(vision_config, dict):
-            vision_config = AlignVisionConfig(**vision_config)
+            vision_config = {}
+            logger.info("vision_config is None. Initializing the AlignVisionConfig with default values.")
 
-        self.text_config = text_config
-        self.vision_config = vision_config
+        self.text_config = AlignTextConfig(**text_config)
+        self.vision_config = AlignVisionConfig(**vision_config)
 
         self.projection_dim = projection_dim
         self.temperature_init_value = temperature_init_value
         self.initializer_range = initializer_range
-        super().__init__(**kwargs)
 
 
 __all__ = ["AlignTextConfig", "AlignVisionConfig", "AlignConfig"]

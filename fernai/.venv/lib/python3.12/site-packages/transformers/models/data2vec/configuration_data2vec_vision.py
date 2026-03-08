@@ -1,3 +1,4 @@
+# coding=utf-8
 # Copyright Meta Platforms and The HuggingFace Inc. team. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,14 +14,20 @@
 # limitations under the License.
 """Data2VecVision model configuration"""
 
-from ...configuration_utils import PreTrainedConfig
+from collections import OrderedDict
+from collections.abc import Mapping
+
+from packaging import version
+
+from ...configuration_utils import PretrainedConfig
+from ...onnx import OnnxConfig
 from ...utils import logging
 
 
 logger = logging.get_logger(__name__)
 
 
-class Data2VecVisionConfig(PreTrainedConfig):
+class Data2VecVisionConfig(PretrainedConfig):
     r"""
     This is the configuration class to store the configuration of a [`Data2VecVisionModel`]. It is used to instantiate
     an Data2VecVision model according to the specified arguments, defining the model architecture. Instantiating a
@@ -167,4 +174,21 @@ class Data2VecVisionConfig(PreTrainedConfig):
         self.semantic_loss_ignore_index = semantic_loss_ignore_index
 
 
-__all__ = ["Data2VecVisionConfig"]
+# Copied from transformers.models.vit.configuration_vit.ViTOnnxConfig
+class Data2VecVisionOnnxConfig(OnnxConfig):
+    torch_onnx_minimum_version = version.parse("1.11")
+
+    @property
+    def inputs(self) -> Mapping[str, Mapping[int, str]]:
+        return OrderedDict(
+            [
+                ("pixel_values", {0: "batch", 1: "num_channels", 2: "height", 3: "width"}),
+            ]
+        )
+
+    @property
+    def atol_for_validation(self) -> float:
+        return 1e-4
+
+
+__all__ = ["Data2VecVisionConfig", "Data2VecVisionOnnxConfig"]

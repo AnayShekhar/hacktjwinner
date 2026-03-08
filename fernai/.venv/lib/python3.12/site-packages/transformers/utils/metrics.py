@@ -1,11 +1,8 @@
 import functools
 import logging
 import time
-from collections.abc import Callable
 from enum import Enum
-from typing import Any
-
-from .import_utils import is_opentelemetry_available
+from typing import Any, Callable, Optional, Union
 
 
 class RequestStatus(Enum):
@@ -20,12 +17,12 @@ class RequestStatus(Enum):
     FAILED = "failed"
 
 
-if is_opentelemetry_available():
+try:
     from opentelemetry import metrics
     from opentelemetry.trace import Status, StatusCode, get_tracer
 
     _has_opentelemetry = True
-else:
+except ImportError:
     _has_opentelemetry = False
 
 
@@ -81,7 +78,7 @@ def traced(
     *,
     span_name=None,
     standalone=False,
-    additional_attributes: list[tuple[str, str, Any | Callable[[Any], Any]]] | None = None,
+    additional_attributes: Optional[list[tuple[str, str, Union[Any, Callable[[Any], Any]]]]] = None,
 ):
     """
     Decorator to trace function calls with OpenTelemetry.
@@ -185,10 +182,7 @@ class ContinuousBatchProcessorMetrics:
         """Initialize OpenTelemetry metrics and tracing if the library is available."""
 
         if not _has_opentelemetry:
-            logger.info(
-                "OpenTelemetry is not installed. Metrics and tracing will not be recorded."
-                "You can install it with `pip install opentelemetry-api>=1.30.0`"
-            )
+            logger.info("OpenTelemetry is not installed. Metrics and tracing will not be recorded.")
             return
 
         self.meter = metrics.get_meter("transformers.generation.continuous_batch_processor")

@@ -1,3 +1,4 @@
+# coding=utf-8
 # Copyright 2022 The HuggingFace Inc. team. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,23 +14,23 @@
 # limitations under the License.
 """BiT model configuration"""
 
-from ...backbone_utils import BackboneConfigMixin
-from ...configuration_utils import PreTrainedConfig
+from ...configuration_utils import PretrainedConfig
 from ...utils import logging
+from ...utils.backbone_utils import BackboneConfigMixin, get_aligned_output_features_output_indices
 
 
 logger = logging.get_logger(__name__)
 
 
-class BitConfig(BackboneConfigMixin, PreTrainedConfig):
+class BitConfig(BackboneConfigMixin, PretrainedConfig):
     r"""
     This is the configuration class to store the configuration of a [`BitModel`]. It is used to instantiate an BiT
     model according to the specified arguments, defining the model architecture. Instantiating a configuration with the
     defaults will yield a similar configuration to that of the BiT
     [google/bit-50](https://huggingface.co/google/bit-50) architecture.
 
-    Configuration objects inherit from [`PreTrainedConfig`] and can be used to control the model outputs. Read the
-    documentation from [`PreTrainedConfig`] for more information.
+    Configuration objects inherit from [`PretrainedConfig`] and can be used to control the model outputs. Read the
+    documentation from [`PretrainedConfig`] for more information.
 
     Args:
         num_channels (`int`, *optional*, defaults to 3):
@@ -127,7 +128,9 @@ class BitConfig(BackboneConfigMixin, PreTrainedConfig):
         self.width_factor = width_factor
 
         self.stage_names = ["stem"] + [f"stage{idx}" for idx in range(1, len(depths) + 1)]
-        self.set_output_features_output_indices(out_indices=out_indices, out_features=out_features)
+        self._out_features, self._out_indices = get_aligned_output_features_output_indices(
+            out_features=out_features, out_indices=out_indices, stage_names=self.stage_names
+        )
 
 
 __all__ = ["BitConfig"]

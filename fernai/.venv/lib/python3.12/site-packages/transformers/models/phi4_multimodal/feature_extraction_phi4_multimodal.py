@@ -16,6 +16,8 @@
 Processor class for Phi4Multimodal
 """
 
+from typing import Optional, Union
+
 import numpy as np
 
 from ...audio_utils import AudioInput, mel_filter_bank
@@ -74,14 +76,14 @@ class Phi4MultimodalFeatureExtractor(SequenceFeatureExtractor):
     def __call__(
         self,
         raw_speech: AudioInput,
-        sampling_rate: int | None = None,
-        pad_to_multiple_of: int | None = None,
-        padding: str | None = "longest",
-        max_length: int | None = None,
+        sampling_rate: Optional[int] = None,
+        pad_to_multiple_of: Optional[int] = None,
+        padding: Optional[str] = "longest",
+        max_length: Optional[int] = None,
         truncation: bool = False,
-        return_tensors: str | TensorType | None = None,
-        return_attention_mask: bool | None = True,
-        device: str | None = "cpu",
+        return_tensors: Optional[Union[str, TensorType]] = None,
+        return_attention_mask: Optional[bool] = True,
+        device: Optional[str] = "cpu",
         **kwargs,
     ) -> BatchFeature:
         """
@@ -108,6 +110,7 @@ class Phi4MultimodalFeatureExtractor(SequenceFeatureExtractor):
                 If set, will return tensors instead of numpy arrays. Acceptable values are:
                 - `'pt'`: Return PyTorch `torch.Tensor` objects.
                 - `'np'`: Return Numpy `np.ndarray` objects.
+                - `'tf'`: Return TensorFlow `tf.constant` objects.
             return_attention_mask (`bool`, *optional*, defaults to `True`):
                 Whether to return the extracted audio input features' attention mask.
             device (`str`, *optional*, defaults to "cpu"):

@@ -1,3 +1,4 @@
+# coding=utf-8
 # Copyright 2023 Google Research, Inc. and The HuggingFace Inc. team. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,22 +14,28 @@
 # limitations under the License.
 """EfficientNet model configuration"""
 
-from ...configuration_utils import PreTrainedConfig
+from collections import OrderedDict
+from collections.abc import Mapping
+
+from packaging import version
+
+from ...configuration_utils import PretrainedConfig
+from ...onnx import OnnxConfig
 from ...utils import logging
 
 
 logger = logging.get_logger(__name__)
 
 
-class EfficientNetConfig(PreTrainedConfig):
+class EfficientNetConfig(PretrainedConfig):
     r"""
     This is the configuration class to store the configuration of a [`EfficientNetModel`]. It is used to instantiate an
     EfficientNet model according to the specified arguments, defining the model architecture. Instantiating a
     configuration with the defaults will yield a similar configuration to that of the EfficientNet
     [google/efficientnet-b7](https://huggingface.co/google/efficientnet-b7) architecture.
 
-    Configuration objects inherit from [`PreTrainedConfig`] and can be used to control the model outputs. Read the
-    documentation from [`PreTrainedConfig`] for more information.
+    Configuration objects inherit from [`PretrainedConfig`] and can be used to control the model outputs. Read the
+    documentation from [`PretrainedConfig`] for more information.
 
     Args:
         num_channels (`int`, *optional*, defaults to 3):
@@ -143,4 +150,20 @@ class EfficientNetConfig(PreTrainedConfig):
         self.num_hidden_layers = sum(num_block_repeats) * 4
 
 
-__all__ = ["EfficientNetConfig"]
+class EfficientNetOnnxConfig(OnnxConfig):
+    torch_onnx_minimum_version = version.parse("1.11")
+
+    @property
+    def inputs(self) -> Mapping[str, Mapping[int, str]]:
+        return OrderedDict(
+            [
+                ("pixel_values", {0: "batch", 1: "num_channels", 2: "height", 3: "width"}),
+            ]
+        )
+
+    @property
+    def atol_for_validation(self) -> float:
+        return 1e-5
+
+
+__all__ = ["EfficientNetConfig", "EfficientNetOnnxConfig"]

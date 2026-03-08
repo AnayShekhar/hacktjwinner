@@ -1,3 +1,4 @@
+# coding=utf-8
 # Copyright 2024 Authors: Wenhai Wang, Enze Xie, Xiang Li, Deng-Ping Fan,
 # Kaitao Song, Ding Liang, Tong Lu, Ping Luo, Ling Shao and The HuggingFace Inc. team.
 # All rights reserved.
@@ -15,25 +16,25 @@
 # limitations under the License.
 """Pvt V2 model configuration"""
 
-from collections.abc import Callable
+from typing import Callable, Union
 
-from ...backbone_utils import BackboneConfigMixin
-from ...configuration_utils import PreTrainedConfig
+from ...configuration_utils import PretrainedConfig
 from ...utils import logging
+from ...utils.backbone_utils import BackboneConfigMixin, get_aligned_output_features_output_indices
 
 
 logger = logging.get_logger(__name__)
 
 
-class PvtV2Config(BackboneConfigMixin, PreTrainedConfig):
+class PvtV2Config(BackboneConfigMixin, PretrainedConfig):
     r"""
     This is the configuration class to store the configuration of a [`PvtV2Model`]. It is used to instantiate a Pvt V2
     model according to the specified arguments, defining the model architecture. Instantiating a configuration with the
     defaults will yield a similar configuration to that of the Pvt V2 B0
     [OpenGVLab/pvt_v2_b0](https://huggingface.co/OpenGVLab/pvt_v2_b0) architecture.
 
-    Configuration objects inherit from [`PreTrainedConfig`] and can be used to control the model outputs. Read the
-    documentation from [`PreTrainedConfig`] for more information.
+    Configuration objects inherit from [`PretrainedConfig`] and can be used to control the model outputs. Read the
+    documentation from [`PretrainedConfig`] for more information.
 
     Args:
         image_size (`Union[int, tuple[int, int]]`, *optional*, defaults to 224):
@@ -102,7 +103,7 @@ class PvtV2Config(BackboneConfigMixin, PreTrainedConfig):
 
     def __init__(
         self,
-        image_size: int | tuple[int, int] = 224,
+        image_size: Union[int, tuple[int, int]] = 224,
         num_channels: int = 3,
         num_encoder_blocks: int = 4,
         depths: list[int] = [2, 2, 2, 2],
@@ -112,7 +113,7 @@ class PvtV2Config(BackboneConfigMixin, PreTrainedConfig):
         strides: list[int] = [4, 2, 2, 2],
         num_attention_heads: list[int] = [1, 2, 5, 8],
         mlp_ratios: list[int] = [8, 8, 4, 4],
-        hidden_act: str | Callable = "gelu",
+        hidden_act: Union[str, Callable] = "gelu",
         hidden_dropout_prob: float = 0.0,
         attention_probs_dropout_prob: float = 0.0,
         initializer_range: float = 0.02,
@@ -147,7 +148,9 @@ class PvtV2Config(BackboneConfigMixin, PreTrainedConfig):
         self.qkv_bias = qkv_bias
         self.linear_attention = linear_attention
         self.stage_names = [f"stage{idx}" for idx in range(1, len(depths) + 1)]
-        self.set_output_features_output_indices(out_indices=out_indices, out_features=out_features)
+        self._out_features, self._out_indices = get_aligned_output_features_output_indices(
+            out_features=out_features, out_indices=out_indices, stage_names=self.stage_names
+        )
 
 
 __all__ = ["PvtV2Config"]

@@ -1,3 +1,4 @@
+# coding=utf-8
 # Copyright 2025 The HuggingFace Inc. team.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,6 +16,7 @@
 
 import math
 from collections.abc import Sequence
+from typing import Optional
 
 import numpy as np
 
@@ -64,7 +66,7 @@ class GraniteSpeechFeatureExtractor(FeatureExtractionMixin):
     def __call__(
         self,
         audios: AudioInput,
-        device: str | None = "cpu",
+        device: Optional[str] = "cpu",
     ) -> BatchFeature:
         requires_backends(self, ["torchaudio"])
 

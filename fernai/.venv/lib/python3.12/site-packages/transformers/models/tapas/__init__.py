@@ -20,6 +20,7 @@ from ...utils.import_utils import define_import_structure
 if TYPE_CHECKING:
     from .configuration_tapas import *
     from .modeling_tapas import *
+    from .modeling_tf_tapas import *
     from .tokenization_tapas import *
 else:
     import sys

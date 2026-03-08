@@ -20,7 +20,6 @@ from ...utils.import_utils import define_import_structure
 if TYPE_CHECKING:
     from .configuration_mllama import *
     from .image_processing_mllama import *
-    from .image_processing_mllama_fast import *
     from .modeling_mllama import *
     from .processing_mllama import *
 else:

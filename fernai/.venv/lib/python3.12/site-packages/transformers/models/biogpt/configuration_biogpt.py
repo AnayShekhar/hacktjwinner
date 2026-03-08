@@ -1,3 +1,4 @@
+# coding=utf-8
 # Copyright 2022 The HuggingFace Team and Microsoft Research AI4Science All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,22 +14,22 @@
 # limitations under the License.
 """BioGPT model configuration"""
 
-from ...configuration_utils import PreTrainedConfig
+from ...configuration_utils import PretrainedConfig
 from ...utils import logging
 
 
 logger = logging.get_logger(__name__)
 
 
-class BioGptConfig(PreTrainedConfig):
+class BioGptConfig(PretrainedConfig):
     r"""
     This is the configuration class to store the configuration of a [`BioGptModel`]. It is used to instantiate an
     BioGPT model according to the specified arguments, defining the model architecture. Instantiating a configuration
     with the defaults will yield a similar configuration to that of the BioGPT
     [microsoft/biogpt](https://huggingface.co/microsoft/biogpt) architecture.
 
-    Configuration objects inherit from [`PreTrainedConfig`] and can be used to control the model outputs. Read the
-    documentation from [`PreTrainedConfig`] for more information.
+    Configuration objects inherit from [`PretrainedConfig`] and can be used to control the model outputs. Read the
+    documentation from [`PretrainedConfig`] for more information.
 
 
     Args:
@@ -72,8 +73,6 @@ class BioGptConfig(PreTrainedConfig):
             Beginning of stream token id.
         eos_token_id (`int`, *optional*, defaults to 2):
             End of stream token id.
-        tie_word_embeddings (`bool`, *optional*, defaults to `True`):
-            Whether to tie weight embeddings
 
     Example:
 
@@ -112,7 +111,6 @@ class BioGptConfig(PreTrainedConfig):
         pad_token_id=1,
         bos_token_id=0,
         eos_token_id=2,
-        tie_word_embeddings=True,
         **kwargs,
     ):
         self.vocab_size = vocab_size
@@ -130,11 +128,7 @@ class BioGptConfig(PreTrainedConfig):
         self.use_cache = use_cache
         self.layerdrop = layerdrop
         self.activation_dropout = activation_dropout
-        self.pad_token_id = pad_token_id
-        self.bos_token_id = bos_token_id
-        self.eos_token_id = eos_token_id
-        self.tie_word_embeddings = tie_word_embeddings
-        super().__init__(**kwargs)
+        super().__init__(pad_token_id=pad_token_id, bos_token_id=bos_token_id, eos_token_id=eos_token_id, **kwargs)
 
 
 __all__ = ["BioGptConfig"]
