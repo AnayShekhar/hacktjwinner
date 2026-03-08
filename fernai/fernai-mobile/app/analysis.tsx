@@ -12,12 +12,11 @@ import {
 import * as FileSystem from 'expo-file-system/legacy';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
+import { getApiBaseUrl } from '@/constants/api';
+import { setLetter as setLetterStore } from '@/stores/letterStore';
+
 const GREEN = '#1a3a2a';
 const LIME = '#a8e063';
-// On a real device (Expo Go), use your computer's LAN IP, e.g. http://192.168.1.5:8000
-const API_BASE_URL =
-  (typeof process !== 'undefined' && process.env?.EXPO_PUBLIC_API_BASE_URL) ||
-  'http://10.0.2.2:8000';
 
 type AgentStatus = {
   name: string;
@@ -57,73 +56,97 @@ export default function AnalysisScreen() {
   const [agents, setAgents] = useState<AgentStatus[]>([]);
   const [letter, setLetter] = useState<string | null>(null);
 
-  useEffect(() => {
-    const runAnalysis = async () => {
-      if (!uri || !fileType) {
-        setError('Missing file information.');
-        setLoading(false);
-        return;
-      }
+  const runAnalysis = React.useCallback(async () => {
+    if (!uri || !fileType) {
+      setError('Missing file information.');
+      setLoading(false);
+      return;
+    }
 
-      try {
-        setLoading(true);
-        setError(null);
+    try {
+      setLoading(true);
+      setError(null);
 
-        // Legacy API: read file contents as base64 so we can send to the backend
-        const base64 = await FileSystem.readAsStringAsync(uri, {
-          encoding: 'base64',
-        });
+      const base64 = await FileSystem.readAsStringAsync(uri, {
+        encoding: 'base64',
+      });
 
-        const response = await fetch(`${API_BASE_URL}/analyze`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            image_base64: base64,
-            file_type: fileType,
-          }),
-        });
+      const response = await fetch(`${getApiBaseUrl()}/analyze`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          image_base64: base64,
+          file_type: fileType,
+        }),
+      });
 
-        if (!response.ok) {
-          const text = await response.text();
-          throw new Error(`Backend error (${response.status}): ${text}`);
+      const json = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        const detail = json.detail;
+        const baseUrl = getApiBaseUrl();
+        let message: string;
+        if (response.status === 404) {
+          message =
+            `Backend not found (404). Start the server: from the project root run ./run_backend.sh (then try again).`;
+        } else if (Array.isArray(detail) && detail[0]?.msg) {
+          message = detail[0].msg;
+        } else if (typeof detail === 'object' && detail?.message) {
+          message = detail.message + (detail.agent ? ` (${detail.agent})` : '');
+        } else if (typeof detail === 'string') {
+          message = detail;
+        } else {
+          message = `Backend error (${response.status})`;
         }
-
-        const json = await response.json();
-
-        setBill(json.bill as BillJSON);
-        setLetter(json.letter as string);
-        setAgents(json.agents as AgentStatus[]);
-      } catch (e: any) {
-        console.error(e);
-        setError(e.message ?? 'Something went wrong while analyzing your bill.');
-      } finally {
-        setLoading(false);
+        throw new Error(message);
       }
-    };
 
-    runAnalysis();
+      setBill(json.bill as BillJSON);
+      const letterText = (json.letter ?? '') as string;
+      setLetter(letterText);
+      setLetterStore(letterText);
+      setAgents((json.agents ?? []) as AgentStatus[]);
+    } catch (e: unknown) {
+      console.error(e);
+      const raw = e instanceof Error ? e.message : String(e);
+      const isNetwork =
+        /network request failed|failed to fetch|network error|econnrefused|enotfound/i.test(raw) ||
+        (e instanceof TypeError && raw.toLowerCase().includes('fetch'));
+      setError(
+        isNetwork
+          ? "Can't reach the server. From the project root run ./run_backend.sh, then try again. On a phone? Use the same WiFi and set EXPO_PUBLIC_API_BASE_URL in fernai-mobile/.env to your computer's IP (e.g. http://192.168.1.x:8000)."
+          : raw || 'Something went wrong while analyzing your bill.'
+      );
+    } finally {
+      setLoading(false);
+    }
   }, [uri, fileType]);
+
+  useEffect(() => {
+    runAnalysis();
+  }, [runAnalysis]);
 
   const handleViewLetter = () => {
     if (!letter) return;
-    router.push({
-      pathname: '/letter',
-      params: { letter },
-    });
+    setLetterStore(letter);
+    router.push('/letter');
   };
 
   const renderAgent = (agent: AgentStatus) => {
     const isCompleted = agent.status === 'completed';
     const isRunning = agent.status === 'running';
+    const isFailed = agent.status === 'failed';
     return (
-      <View key={agent.name} style={styles.agentChip}>
+      <View key={agent.name} style={[styles.agentChip, isFailed && styles.agentChipFailed]}>
         <Text style={styles.agentName}>{agent.name}</Text>
         {isCompleted ? (
           <Text style={styles.agentStatusCompleted}>✓</Text>
         ) : isRunning ? (
           <ActivityIndicator size="small" color={LIME} />
+        ) : isFailed ? (
+          <Text style={styles.agentStatusFailed}>✕</Text>
         ) : (
           <Text style={styles.agentStatusPending}>•</Text>
         )}
@@ -196,19 +219,29 @@ export default function AnalysisScreen() {
         <View style={styles.errorArea}>
           <Text style={styles.errorTitle}>We hit a snag.</Text>
           <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity style={styles.secondaryButton} onPress={() => router.back()}>
-            <Text style={styles.secondaryButtonText}>Go Back</Text>
-          </TouchableOpacity>
+          <View style={styles.errorButtons}>
+            <TouchableOpacity style={styles.primaryButton} onPress={() => runAnalysis()}>
+              <Text style={styles.primaryButtonText}>Try Again</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.secondaryButton} onPress={() => router.back()}>
+              <Text style={styles.secondaryButtonText}>Go Back</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       )}
 
       {!loading && !error && bill && (
         <>
           <FlatList
-            data={bill.line_items}
+            data={bill.line_items ?? []}
             keyExtractor={(item, index) => `${item.cpt_code}-${index}`}
             renderItem={renderLineItem}
             contentContainerStyle={styles.listContent}
+            ListEmptyComponent={
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyStateText}>No line items found on this bill.</Text>
+              </View>
+            }
           />
 
           <View style={styles.bottomBar}>
@@ -281,6 +314,21 @@ const styles = StyleSheet.create({
     color: '#9ca3af',
     fontSize: 12,
   },
+  agentStatusFailed: {
+    color: '#b91c1c',
+    fontWeight: '700',
+  },
+  agentChipFailed: {
+    backgroundColor: '#fee2e2',
+  },
+  emptyState: {
+    padding: 24,
+    alignItems: 'center',
+  },
+  emptyStateText: {
+    fontSize: 14,
+    color: '#6b7280',
+  },
   loadingArea: {
     flex: 1,
     justifyContent: 'center',
@@ -295,6 +343,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 24,
+  },
+  errorButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 16,
   },
   errorTitle: {
     fontSize: 18,

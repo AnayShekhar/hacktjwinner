@@ -7,7 +7,7 @@ def generate_letter(bill: BillJSON) -> str:
     """
     Letter Generation Agent
 
-    In production, this would call Gemini 2.0 Flash with the final BillJSON
+    In production this could call an LLM with the final BillJSON
     and ask it to draft a formal dispute letter that cites CMS rates and
     itemized discrepancies.
 
@@ -26,13 +26,17 @@ def generate_letter(bill: BillJSON) -> str:
     lines.append("After reviewing the itemized charges, I identified the following concerns:")
     lines.append("")
 
-    for item in bill.line_items:
-        if not item.flagged:
-            continue
+    flagged_items = [i for i in bill.line_items if i.flagged]
+    for item in flagged_items:
+        cms_part = f"CMS rate ${item.cms_price:,.2f}, " if item.cms_price is not None else ""
         lines.append(
-            f"- CPT {item.cpt_code} ({item.description}): billed ${item.billed_price:,.2f}, "
-            f"CMS rate ${item.cms_price:,.2f}, potential overcharge ${item.savings:,.2f}."
+            f"- CPT {item.cpt_code} ({item.description}): billed ${item.billed_price:,.2f}. "
+            f"{cms_part}Potential overcharge ${item.savings:,.2f}. "
+            f"{item.flag_reason or ''}"
         )
+    if not flagged_items:
+        lines.append("After careful review, I am requesting a full itemized breakdown and verification of all charges.")
+        lines.append("")
 
     if bill.total_recoverable > 0:
         lines.append("")

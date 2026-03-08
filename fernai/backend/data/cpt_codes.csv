@@ -1,0 +1,42 @@
+cpt_code,description,cms_price
+99213,Office visit established patient 15-20 min,120.00
+99214,Office visit established patient 25-30 min,180.00
+99215,Office visit established patient 40+ min,265.00
+99203,Office visit new patient 30-44 min,195.00
+99204,Office visit new patient 45-59 min,280.00
+99205,Office visit new patient 60-74 min,375.00
+99211,Office visit established patient minimal,50.00
+99212,Office visit established patient 10 min,85.00
+99231,Subsequent hospital care 15 min,95.00
+99232,Subsequent hospital care 25 min,145.00
+99233,Subsequent hospital care 35 min,195.00
+99221,Initial hospital care 30 min,220.00
+99222,Initial hospital care 50 min,330.00
+99223,Initial hospital care 70 min,450.00
+99281,Emergency visit low severity,95.00
+99282,Emergency visit moderate severity,165.00
+99283,Emergency visit moderate-high severity,260.00
+99284,Emergency visit high severity,365.00
+99285,Emergency visit high severity with multiple issues,450.00
+36415,Venipuncture age 3+, routine,25.00
+80053,Comprehensive metabolic panel,35.00
+85025,Complete blood count with differential,28.00
+81025,Urine pregnancy test,15.00
+71046,Chest X-ray single view,45.00
+71250,Chest CT without contrast,280.00
+93000,EKG complete 12 lead,55.00
+94760,Oximetry single determination,25.00
+A0429,Ambulance service basic life support,450.00
+G0008,Influenza virus vaccine,45.00
+J0696,Injection ceftriaxone 250mg,35.00
+J0717,Injection ceftriaxone 500mg,55.00
+J2675,Injection penicillin G procaine 100000 units,12.00
+36416,Venipuncture age 3+ difficult,45.00
+84443,Thyroid stimulating hormone,42.00
+84439,Thyroid stimulating immunoglobulin,95.00
+80048,Basic metabolic panel,28.00
+81001,Urinalysis automated with microscopy,22.00
+72148,MRI lumbar spine without contrast,450.00
+70450,CT head without contrast,265.00
+99238,Hospital discharge 30 min,185.00
+99239,Hospital discharge 45 min,265.00

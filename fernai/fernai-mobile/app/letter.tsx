@@ -7,16 +7,16 @@ import {
   ScrollView,
   TouchableOpacity,
 } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
+
+import { getLetter } from '@/stores/letterStore';
 
 const GREEN = '#1a3a2a';
 const LIME = '#a8e063';
 
 export default function LetterScreen() {
-  const { letter } = useLocalSearchParams<{ letter?: string }>();
   const router = useRouter();
-
-  const content = letter ?? 'No letter available.';
+  const content = getLetter() ?? 'No letter available.';
 
   return (
     <SafeAreaView style={styles.container}>

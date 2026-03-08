@@ -2,37 +2,58 @@ from __future__ import annotations
 
 from typing import Tuple
 
+from ..ml.anomaly import score_bill_anomalies
+from ..rag.retriever import retrieve_cpt_matches
 from ..schemas import BillJSON
 
+CMS_OVERCHARGE_THRESHOLD = 1.2  # Flag if billed > 20% above CMS rate
+# Anomaly score below this = potential outlier (Isolation Forest decision_function)
+ANOMALY_SCORE_THRESHOLD = -0.1
 
-CMS_OVERCHARGE_THRESHOLD = 1.2  # >20% above CMS price
 
-
-def run_price_auditor(bill: BillJSON) -> Tuple[BillJSON, str]:
+def run_price_auditor(bill: BillJSON, persist_directory: str = "chroma_db") -> Tuple[BillJSON, str]:
     """
-    Price Auditor Agent
-
-    In production, this would:
-      - Look up CMS/Medicare fee schedule via RAG
-      - Compare billed_price vs cms_price for each line item
-      - Flag items that exceed CMS rate by >20%
-      - Run Isolation Forest to detect unusual charge patterns
-      - Compute savings per line item and total_recoverable
-
-    The current implementation applies a simple rule-based check using any
-    existing cms_price values on the bill.
+    For each line item: fill cms_price from RAG if missing, flag if billed > 20% above CMS,
+    optionally flag statistical price anomalies. Compute savings and total_recoverable.
     """
     total_recoverable = 0.0
+    # Fill missing cms_price from RAG
+    for item in bill.line_items:
+        if item.cms_price is not None:
+            continue
+        query = f"{item.cpt_code} {item.description}".strip() or item.cpt_code
+        if query:
+            matches = retrieve_cpt_matches(query, top_k=1, persist_directory=persist_directory)
+            if matches:
+                _, _, cms_price, _ = matches[0]
+                if cms_price is not None:
+                    item.cms_price = cms_price
 
+    # Flag overcharges and compute savings
     for item in bill.line_items:
         if item.cms_price is None:
             continue
-
         if item.billed_price > item.cms_price * CMS_OVERCHARGE_THRESHOLD:
             item.flagged = True
             item.savings = max(0.0, item.billed_price - item.cms_price)
+            if not item.flag_reason:
+                item.flag_reason = (
+                    f"Billed ${item.billed_price:.2f} exceeds CMS reference ${item.cms_price:.2f} by more than 20%."
+                )
             total_recoverable += item.savings
 
-    bill.total_recoverable = total_recoverable
-    return bill, "Price auditor completed with simple rule-based checks"
+    # Optional: flag price anomalies (unusual billed amounts)
+    try:
+        scores = score_bill_anomalies(bill)
+        for i, item in enumerate(bill.line_items):
+            if i < len(scores) and scores[i] < ANOMALY_SCORE_THRESHOLD and not item.flagged:
+                item.flagged = True
+                item.flag_reason = (item.flag_reason or "") + " Unusual charge amount vs. other line items."
+                if item.savings <= 0 and item.cms_price is not None:
+                    item.savings = max(0.0, item.billed_price - item.cms_price)
+                    total_recoverable += item.savings
+    except Exception:
+        pass
 
+    bill.total_recoverable = total_recoverable
+    return bill, f"Price audit complete; ${total_recoverable:.2f} total recoverable."
